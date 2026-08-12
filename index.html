@@ -1162,7 +1162,7 @@ function renderPage() {
     lead: stepName(cl(1)), body: "base", caption: stepName(cl(-1)), small: stepName(cl(-2))
   };
 
-  const bodyW = 400;
+  const bodyW = state.weight;
   const headW = state.weight;
   // font/line/tracking from the scale; caps styles get +8% tracking (Butterick: 5–12%)
   const st = (r, w, capsLs) =>
@@ -1176,18 +1176,18 @@ function renderPage() {
   $("pageView").innerHTML = `
   <div class="page">
     <div class="measure">
-      <p class="pv kicker" ${lbl("kicker", "caption")} style="${st(roles.caption, 600, 0.08)}margin:0 0 ${snap(roles.caption.px * 0.75)}px;">Field notes · Typography</p>
+      <p class="pv kicker" ${lbl("kicker", "caption")} style="${st(roles.caption, headW, 0.08)}margin:0 0 ${snap(roles.caption.px * 0.75)}px;">Field notes · Typography</p>
       <h1 class="pv" ${lbl("h1", "h1")} style="${st(roles.h1, headW)}margin:0 0 ${snap(roles.h1.px * 0.35)}px;">Terraces hold the hillside in place</h1>
-      <p class="pv byline" ${lbl("byline", "caption")} style="${st(roles.caption, 400)}margin:0 0 ${snap(roles.body.px * 1.5)}px;">By A. Reader · August 2026 · 6 min read</p>
+      <p class="pv byline" ${lbl("byline", "caption")} style="${st(roles.caption, bodyW)}margin:0 0 ${snap(roles.body.px * 1.5)}px;">By A. Reader · August 2026 · 6 min read</p>
 
-      <p class="pv lead" ${lbl("lead paragraph", "lead")} style="${st(roles.lead, 400)}${pm}">Long before anyone wrote about modular scales, farmers were stepping hillsides into level terraces — each one proportioned to the slope, each one holding water where it was needed.</p>
+      <p class="pv lead" ${lbl("lead paragraph", "lead")} style="${st(roles.lead, bodyW)}${pm}">Long before anyone wrote about modular scales, farmers were stepping hillsides into level terraces — each one proportioned to the slope, each one holding water where it was needed.</p>
 
       <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">A type scale works the same way. Instead of choosing sizes one at a time, you choose a base and a ratio, and every level follows from the decision. The eye reads the page the way water moves down the hill: step by step, nothing abrupt, nothing arbitrary. This paragraph is set at the base size, on the line grid, in a measure of about sixty-six characters.</p>
 
       <h2 class="pv" ${lbl("h2", "h2")} style="${st(roles.h2, headW)}${hm(roles.h2)}">Stepping down the slope</h2>
       <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">On a phone the hillside is steeper, so the terraces get shallower: the same base size, a gentler ratio. Headlines that command a desktop page would swamp a small screen, and the damped scale keeps every level usable.</p>
 
-      <blockquote class="pv" ${lbl("blockquote", "lead")} style="${st(roles.lead, 400)}margin:${snap(roles.body.px * 1.5)}px 0;">“Typography exists to honor content — the scale is just the terrace wall that keeps it from washing away.”</blockquote>
+      <blockquote class="pv" ${lbl("blockquote", "lead")} style="${st(roles.lead, bodyW)}margin:${snap(roles.body.px * 1.5)}px 0;">“Typography exists to honor content — the scale is just the terrace wall that keeps it from washing away.”</blockquote>
 
       <h3 class="pv" ${lbl("h3", "h3")} style="${st(roles.h3, headW)}${hm(roles.h3)}">Water finds the level</h3>
       <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">Everything on this page comes from the exported tokens — no ad-hoc sizes anywhere:</p>
@@ -1199,17 +1199,17 @@ function renderPage() {
 
       <figure class="pv" ${lbl("figure + caption", "caption")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
         <div class="figure-box">fig. 1 — placeholder</div>
-        <figcaption style="${st(roles.caption, 400)}margin-top:${snap(roles.caption.px * 0.5)}px;">Rice terraces quantize a continuous slope — a line grid does the same to leading.</figcaption>
+        <figcaption style="${st(roles.caption, bodyW)}margin-top:${snap(roles.caption.px * 0.5)}px;">Rice terraces quantize a continuous slope — a line grid does the same to leading.</figcaption>
       </figure>
 
       <div class="pv card" ${lbl("UI card", "body")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
         <h4 style="${st(roles.h3, headW)}margin:0 0 ${snap(roles.h3.px * 0.35)}px;">Take the scale with you</h4>
-        <p style="${st(roles.caption, 400)}margin:0 0 ${snap(roles.body.px)}px;">Export CSS custom properties, fluid clamp() values, or JSON tokens.</p>
-        <span class="btn" style="${st(roles.caption, 600, 0.06)}line-height:1;">Export tokens</span>
+        <p style="${st(roles.caption, bodyW)}margin:0 0 ${snap(roles.body.px)}px;">Export CSS custom properties, fluid clamp() values, or JSON tokens.</p>
+        <span class="btn" style="${st(roles.caption, headW, 0.06)}line-height:1;">Export tokens</span>
       </div>
 
       <hr style="margin:${snap(roles.body.px * 1.5)}px 0;">
-      <p class="pv smallprint" ${lbl("fine print", "small")} style="${st(roles.small, 400)}margin:0;">Set in ${state.font.replace(/^__system-/, "system ")} · base ${state.bp[bp].base}px · ratio ${state.bp[bp].ratio} · ${state.grid > 0 ? state.grid + "px grid" : "grid off"} — hover any block to see its token.</p>
+      <p class="pv smallprint" ${lbl("fine print", "small")} style="${st(roles.small, bodyW)}margin:0;">Set in ${state.font.replace(/^__system-/, "system ")} · base ${state.bp[bp].base}px · ratio ${state.bp[bp].ratio} · ${state.grid > 0 ? state.grid + "px grid" : "grid off"} — hover any block to see its token.</p>
     </div>
   </div>`;
 }
