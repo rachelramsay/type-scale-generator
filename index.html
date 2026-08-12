@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terrace — Responsive Type Scale Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F3EA;
+    --paper-2: #EFE9DB;
+    --ink: #191611;
+    --ink-60: rgba(25, 22, 17, 0.6);
+    --ink-40: rgba(25, 22, 17, 0.4);
+    --hairline: rgba(25, 22, 17, 0.14);
+    --accent: #D5451B;
+    --accent-soft: rgba(213, 69, 27, 0.08);
+    --code-bg: #1E1B15;
+    --code-ink: #EDE7D8;
+    --ui: "Archivo", sans-serif;
+    --mono: "Spline Sans Mono", monospace;
+    --sidebar-w: 320px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { height: 100%; }
+
+  body {
+    font-family: var(--ui);
+    background: var(--paper);
+    color: var(--ink);
+    height: 100%;
+    background-image: radial-gradient(rgba(25,22,17,0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* ---------- Layout ---------- */
+  .app {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "header header" "sidebar main";
+    height: 100vh;
+  }
+
+  header {
+    grid-area: header;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  header h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  header h1 .tick { color: var(--accent); }
+  header .tagline {
+    font-size: 12.5px;
+    color: var(--ink-60);
+    letter-spacing: 0.01em;
+  }
+  header .credit {
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--ink-40);
+  }
+  header .credit a { color: inherit; }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    grid-area: sidebar;
+    overflow-y: auto;
+    border-right: 1px solid var(--ink);
+    background: var(--paper);
+    padding-bottom: 48px;
+  }
+
+  .group {
+    padding: 18px 20px 20px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .group h2 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .group h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12.5px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .field label .val {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-60);
+  }
+
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 20px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--ink-40);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    margin-top: -6px;
+  }
+  input[type="range"]:hover::-webkit-slider-thumb { background: var(--accent); border-color: var(--accent); }
+  input[type="range"]:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 7px 9px;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 0;
+    color: var(--ink);
+  }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+  .check input { width: auto; accent-color: var(--accent); }
+
+  /* Breakpoint editor tabs */
+  .bp-tabs {
+    display: flex;
+    border: 1px solid var(--ink);
+    margin-bottom: 14px;
+  }
+  .bp-tabs button {
+    flex: 1;
+    font-family: var(--ui);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 0;
+    background: var(--paper);
+    color: var(--ink-60);
+    border: none;
+    border-right: 1px solid var(--ink);
+    cursor: pointer;
+  }
+  .bp-tabs button:last-child { border-right: none; }
+  .bp-tabs button.active { background: var(--ink); color: var(--paper); }
+
+  .hint {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-60);
+    margin-top: 10px;
+  }
+  .hint a { color: inherit; }
+
+  .seg { display: flex; border: 1px solid var(--ink); }
+  .seg button {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 6px 0;
+    background: var(--paper);
+    color: var(--ink-60);
+    border: none;
+    border-right: 1px solid var(--ink);
+    cursor: pointer;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--ink); color: var(--paper); }
+
+  /* ---------- Main ---------- */
+  main {
+    grid-area: main;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 28px;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-wrap: wrap;
+  }
+
+  .device-tabs { display: flex; border: 1px solid var(--ink); }
+  .device-tabs button {
+    font-family: var(--ui);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    background: var(--paper);
+    color: var(--ink-60);
+    border: none;
+    border-right: 1px solid var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .device-tabs button:last-child { border-right: none; }
+  .device-tabs button.active { background: var(--accent); color: var(--paper); }
+  .device-tabs .w {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  .sample-input {
+    flex: 1;
+    min-width: 200px;
+  }
+  .sample-input input {
+    border-color: var(--hairline);
+    background: transparent;
+    font-family: var(--ui);
+  }
+
+  .toolbar .export-btn {
+    font-family: var(--ui);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+  }
+  .toolbar .export-btn:hover { background: var(--accent); border-color: var(--accent); }
+
+  .toolbar .ghost-btn {
+    font-family: var(--ui);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--ink-60);
+    border: 1px solid var(--ink);
+    cursor: pointer;
+  }
+  .toolbar .ghost-btn.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .toolbar .ghost-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Baseline grid overlay: lines drawn every var(--g) px over the active view */
+  .specimen.show-grid .view-body {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(213, 69, 27, 0.22) 0, rgba(213, 69, 27, 0.22) 1px,
+      transparent 1px, transparent var(--g, 4px)
+    );
+  }
+
+  /* Specimen */
+  .specimen-wrap {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    justify-content: center;
+  }
+  .specimen {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 6px 6px 0 rgba(25,22,17,0.12);
+    transition: max-width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    align-self: flex-start;
+  }
+
+  /* ---------- Craft checks modal ---------- */
+  .modal-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(25,22,17,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 20;
+  }
+  body.craft-open .modal-scrim { opacity: 1; pointer-events: auto; }
+  .craft {
+    width: 100%;
+    max-width: 720px;
+    max-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 8px 8px 0 rgba(25,22,17,0.25);
+    transform: translateY(10px) scale(0.985);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  body.craft-open .craft { transform: none; }
+  #craftList { overflow-y: auto; }
+  .craft-close {
+    background: none;
+    border: none;
+    font-size: 15px;
+    color: var(--ink-60);
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 14px;
+  }
+  .craft-close:hover { color: var(--accent); }
+
+  .toolbar .badge {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    padding: 1px 6px;
+    margin-left: 2px;
+    background: var(--paper-2);
+    border: 1px solid var(--hairline);
+  }
+  .toolbar .badge.ok { color: #3E7A46; }
+  .toolbar .badge.warns { color: var(--paper); background: var(--accent); border-color: var(--accent); }
+  .craft-head {
+    display: flex;
+    align-items: baseline;
+    padding: 10px 22px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper-2);
+    flex: none;
+  }
+  .craft-head h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin-right: auto;
+  }
+  .craft-head span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-60);
+  }
+  .craft-item {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 10px;
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .craft-item .mark {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    padding-top: 1px;
+  }
+  .craft-item.pass .mark { color: #3E7A46; }
+  .craft-item.warn .mark { color: var(--accent); }
+  .craft-item.info .mark { color: var(--ink-40); }
+  .craft-item .title { font-weight: 600; }
+  .craft-item .detail { color: var(--ink-60); }
+  .craft-item .src {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-40);
+    display: block;
+    margin-top: 2px;
+  }
+  .craft-foot {
+    padding: 10px 22px;
+    font-size: 11px;
+    color: var(--ink-40);
+  }
+  .craft-foot a { color: var(--ink-60); }
+  .specimen-head {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 22px;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-60);
+    background: var(--paper-2);
+  }
+
+  .step-row {
+    padding: 16px 22px;
+    box-shadow: inset 0 -1px var(--hairline);
+    position: relative;
+  }
+  .step-row:last-child { box-shadow: none; }
+  .step-row:hover { background: var(--accent-soft); }
+  .step-row.is-base::before {
+    content: "base";
+    position: absolute;
+    top: 10px;
+    right: 22px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--paper);
+    background: var(--accent);
+    padding: 2px 7px;
+  }
+
+  .step-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--ink-60);
+    margin-bottom: 8px;
+  }
+  .step-meta .name {
+    color: var(--ink);
+    font-weight: 500;
+    min-width: 42px;
+  }
+  .step-meta .tri { color: var(--ink-40); }
+  .step-meta .tri em { font-style: normal; color: var(--accent); font-weight: 500; }
+
+  .step-sample {
+    overflow-wrap: break-word;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* ---------- Page preview ---------- */
+  .toolbar .view-seg { flex: none; }
+  .toolbar .view-seg button { padding: 7px 16px; font-family: var(--ui); font-size: 12px; font-weight: 600; }
+
+  .page {
+    padding: 40px 22px 32px;
+  }
+  .page .measure {
+    max-width: 66ch;
+    margin: 0 auto;
+  }
+  .pv { position: relative; }
+  .pv:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -16px;
+    right: 0;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    background: var(--accent);
+    padding: 2px 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .pv:hover { outline: 1px dashed rgba(213, 69, 27, 0.5); outline-offset: 2px; }
+
+  .page .kicker { text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .page .byline { color: var(--ink-60); font-family: var(--ui); }
+  .page .lead { color: var(--ink); }
+  .page blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    font-style: italic;
+  }
+  .page ul { padding-left: 1.2em; }
+  .page .figure-box {
+    background: var(--paper-2);
+    border: 1px solid var(--hairline);
+    aspect-ratio: 3 / 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-40);
+  }
+  .page figcaption { color: var(--ink-60); }
+  .page .card {
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 4px 4px 0 rgba(25,22,17,0.1);
+    padding: 24px;
+  }
+  .page .card .btn {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  .page .card .btn:hover { background: var(--accent); }
+  .page .smallprint { color: var(--ink-40); }
+  .page hr {
+    border: none;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* ---------- Export drawer ---------- */
+  .drawer-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(25,22,17,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 20;
+  }
+  .drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(620px, 92vw);
+    background: var(--code-bg);
+    color: var(--code-ink);
+    transform: translateX(102%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 21;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.3);
+  }
+  body.drawer-open .drawer { transform: translateX(0); }
+  body.drawer-open .drawer-scrim { opacity: 1; pointer-events: auto; }
+
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(237,231,216,0.15);
+    gap: 6px;
+  }
+  .drawer-head h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 17px;
+    margin-right: auto;
+  }
+  .drawer-tabs { display: flex; gap: 2px; }
+  .drawer-tabs button, .drawer-head .copy, .drawer-head .close {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 6px 12px;
+    background: transparent;
+    color: rgba(237,231,216,0.6);
+    border: 1px solid rgba(237,231,216,0.25);
+    cursor: pointer;
+  }
+  .drawer-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .drawer-head .copy:hover { color: var(--code-ink); border-color: var(--code-ink); }
+  .drawer-head .close { border: none; font-size: 16px; padding: 4px 8px; }
+  .drawer pre {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.65;
+    tab-size: 2;
+  }
+  .drawer pre .c { color: rgba(237,231,216,0.4); }
+  .drawer pre .p { color: #E9A178; }
+  .drawer pre .v { color: #A8C7A2; }
+
+  @media (max-width: 860px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-areas: "header" "sidebar" "main";
+      grid-template-rows: auto auto 1fr;
+      height: auto;
+    }
+    aside { border-right: none; border-bottom: 1px solid var(--ink); }
+    body, html { height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>Terrace<span class="tick">.</span></h1>
+    <span class="tagline">Responsive type scales — modular ratios stepped down for tablet &amp; mobile</span>
+    <span class="credit">methods after <a href="https://precise-type.com/" target="_blank" rel="noopener">precise-type.com</a></span>
+  </header>
+
+  <aside>
+    <div class="group">
+      <h2>Scale</h2>
+      <div class="bp-tabs" id="bpEditTabs">
+        <button data-bp="desktop" class="active">Desktop</button>
+        <button data-bp="tablet">Tablet</button>
+        <button data-bp="mobile">Mobile</button>
+      </div>
+      <div class="field">
+        <label>Base size <span class="val" id="baseVal"></span></label>
+        <input type="range" id="baseSize" min="12" max="24" step="0.5">
+      </div>
+      <div class="field">
+        <label>Ratio <span class="val" id="ratioVal"></span></label>
+        <select id="ratioPreset">
+          <option value="1.067">Minor Second — 1.067</option>
+          <option value="1.125">Major Second — 1.125</option>
+          <option value="1.2">Minor Third — 1.200</option>
+          <option value="1.25">Major Third — 1.250</option>
+          <option value="1.333">Perfect Fourth — 1.333</option>
+          <option value="1.414">Augmented Fourth — 1.414</option>
+          <option value="1.5">Perfect Fifth — 1.500</option>
+          <option value="1.618">Golden Ratio — 1.618</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div class="field" id="customRatioField" style="display:none">
+        <label>Custom ratio</label>
+        <input type="number" id="customRatio" min="1.01" max="2.2" step="0.001" value="1.25">
+      </div>
+      <div class="field" id="autoField" style="display:none">
+        <label class="check">
+          <input type="checkbox" id="autoDerive" checked>
+          Auto-derive from desktop
+        </label>
+        <p class="hint" id="autoHint"></p>
+      </div>
+      <div class="row2 field">
+        <div>
+          <label>Steps up</label>
+          <input type="number" id="stepsUp" min="1" max="8" value="5">
+        </div>
+        <div>
+          <label>Steps down</label>
+          <input type="number" id="stepsDown" min="0" max="4" value="2">
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Rhythm</h2>
+      <div class="field">
+        <label>Base line-height <span class="val" id="lhVal"></span></label>
+        <input type="range" id="lhBase" min="1.1" max="1.9" step="0.025" value="1.35">
+      </div>
+      <div class="field">
+        <label>Line-height curve <span class="val" id="lhCurveVal"></span></label>
+        <input type="range" id="lhCurve" min="0" max="0.4" step="0.01" value="0.16">
+        <p class="hint">How much leading tightens as sizes grow. 0 keeps a constant ratio.</p>
+      </div>
+      <div class="field">
+        <label>Line grid <span class="val" id="gridVal"></span></label>
+        <div class="seg" id="gridSeg">
+          <button data-grid="0">Off</button>
+          <button data-grid="4" class="active">4px</button>
+          <button data-grid="8">8px</button>
+        </div>
+        <p class="hint">Tunes every line-height to a 4px or 8px grid — “add and delete vertical space in measured intervals” (webtypography.net §2.2.2).</p>
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" id="roundSizes" checked>
+          Round sizes to whole pixels
+        </label>
+        <p class="hint">Rounds each step of the modular scale to an integer pixel size before computing rhythm.</p>
+      </div>
+      <div class="field">
+        <label>Tracking curve <span class="val" id="lsVal"></span></label>
+        <input type="range" id="lsIntensity" min="0" max="2" step="0.05" value="1">
+        <p class="hint">Negative letter-spacing for display sizes, positive for small text, anchored at 0 for the base size.</p>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Breakpoints</h2>
+      <div class="row2 field">
+        <div>
+          <label>Tablet ≤</label>
+          <input type="number" id="tabletMax" min="600" max="1400" step="1" value="1024">
+        </div>
+        <div>
+          <label>Mobile ≤</label>
+          <input type="number" id="mobileMax" min="320" max="800" step="1" value="640">
+        </div>
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" id="fluidMode">
+          Fluid mode — <code style="font-family:var(--mono);font-size:11px">clamp()</code>
+        </label>
+        <p class="hint">Interpolates each step linearly from the mobile scale (at 390px) to the desktop scale (at 1280px) instead of stepping at breakpoints.</p>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Font</h2>
+      <div class="field">
+        <label>Preview family</label>
+        <select id="fontSelect">
+          <option value="Fraunces" data-serif="1" selected>Fraunces</option>
+          <option value="Newsreader" data-serif="1">Newsreader</option>
+          <option value="Libre Caslon Text" data-serif="1">Libre Caslon Text</option>
+          <option value="Archivo">Archivo</option>
+          <option value="Instrument Sans">Instrument Sans</option>
+          <option value="Sora">Sora</option>
+          <option value="IBM Plex Mono" data-mono="1">IBM Plex Mono</option>
+          <option value="__system-serif">System serif</option>
+          <option value="__system-sans">System sans</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Weight <span class="val" id="weightVal"></span></label>
+        <input type="range" id="fontWeight" min="300" max="700" step="100" value="500">
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="toolbar">
+      <div class="seg view-seg" id="viewSeg">
+        <button data-view="steps" class="active">Steps</button>
+        <button data-view="page">Page</button>
+      </div>
+      <div class="device-tabs" id="deviceTabs">
+        <button data-bp="desktop" class="active">Desktop <span class="w" id="wDesktop"></span></button>
+        <button data-bp="tablet">Tablet <span class="w" id="wTablet"></span></button>
+        <button data-bp="mobile">Mobile <span class="w" id="wMobile"></span></button>
+      </div>
+      <div class="sample-input" id="sampleWrap">
+        <input type="text" id="sampleText" value="The five boxing wizards jump quickly" aria-label="Sample text">
+      </div>
+      <button class="ghost-btn" id="toggleGrid" title="Show baseline grid overlay">Grid ▦</button>
+      <button class="ghost-btn" id="openCraft" title="Audit the current breakpoint against typographic guidance">Checks <span class="badge" id="craftBadge"></span></button>
+      <button class="export-btn" id="openExport">Export ↗</button>
+    </div>
+
+    <div class="specimen-wrap">
+      <div class="specimen" id="specimen">
+        <div class="specimen-head">
+          <span id="specimenLabel"></span>
+          <span id="specimenFont"></span>
+        </div>
+        <div id="stepList" class="view-body"></div>
+        <div id="pageView" class="view-body" style="display:none"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-scrim" id="craftScrim">
+  <div class="craft" id="craft" role="dialog" aria-label="Craft checks">
+    <div class="craft-head">
+      <h3>Craft checks</h3>
+      <span id="craftScope"></span>
+      <button class="craft-close" id="closeCraft" aria-label="Close">✕</button>
+    </div>
+    <div id="craftList"></div>
+    <p class="craft-foot">Rules from
+      <a href="https://practicaltypography.com/summary-of-key-rules.html" target="_blank" rel="noopener">Practical Typography</a> ·
+      <a href="https://webtypography.net/toc" target="_blank" rel="noopener">webtypography.net</a> ·
+      <a href="https://fonts.google.com/knowledge/using_type/the_foundations_of_web_typography" target="_blank" rel="noopener">Google Fonts Knowledge</a> ·
+      <a href="https://designsystem.digital.gov/components/typography/" target="_blank" rel="noopener">USWDS</a> ·
+      <a href="https://webaim.org/techniques/fonts/" target="_blank" rel="noopener">WebAIM</a>
+    </p>
+  </div>
+</div>
+
+<div class="drawer-scrim" id="scrim"></div>
+<div class="drawer" role="dialog" aria-label="Export code">
+  <div class="drawer-head">
+    <h3>Export</h3>
+    <div class="drawer-tabs" id="exportTabs">
+      <button data-tab="css" class="active">CSS</button>
+      <button data-tab="fluid">Fluid CSS</button>
+      <button data-tab="json">Tokens</button>
+    </div>
+    <button class="copy" id="copyBtn">Copy</button>
+    <button class="close" id="closeDrawer" aria-label="Close">✕</button>
+  </div>
+  <pre id="exportCode"></pre>
+</div>
+
+<script>
+/* ============================================================
+   Terrace — responsive type scale generator
+   Scale math after precise-type.com's modular-scale approach:
+   size(i) = base × ratio^i, line-heights snapped to a pixel
+   grid, letter-spacing on an exponential curve.
+   ============================================================ */
+
+const RATIO_NAMES = {
+  "1.067": "minor-second", "1.125": "major-second", "1.2": "minor-third",
+  "1.25": "major-third", "1.333": "perfect-fourth", "1.414": "augmented-fourth",
+  "1.5": "perfect-fifth", "1.618": "golden-ratio"
+};
+
+const state = {
+  editBp: "desktop",
+  viewBp: "desktop",
+  view: "steps",
+  stepsUp: 5,
+  stepsDown: 2,
+  lhBase: 1.35,
+  lhCurve: 0.16,
+  grid: 4,
+  roundSizes: true,
+  showGrid: false,
+  lsIntensity: 1,
+  tabletMax: 1024,
+  mobileMax: 640,
+  fluid: false,
+  font: "Fraunces",
+  weight: 500,
+  sample: "The five boxing wizards jump quickly",
+  bp: {
+    desktop: { base: 16, ratio: 1.25,  vw: 1280 },
+    tablet:  { base: 16, ratio: 1.188, vw: 768, auto: true },
+    mobile:  { base: 16, ratio: 1.138, vw: 390, auto: true }
+  }
+};
+
+/* ---------- Scale math ---------- */
+
+// Auto-derive tablet/mobile scales: slightly smaller base, damped ratio.
+function deriveScales() {
+  // Derived bases step down from desktop but never below 16px
+  // (or below the desktop base itself, if that is already under 16).
+  const d = state.bp.desktop;
+  const floor = Math.min(16, d.base);
+  if (state.bp.tablet.auto) {
+    state.bp.tablet.base = Math.max(floor, d.base - 1);
+    state.bp.tablet.ratio = round3(1 + (d.ratio - 1) * 0.75);
+  }
+  if (state.bp.mobile.auto) {
+    state.bp.mobile.base = Math.max(floor, d.base - 2);
+    state.bp.mobile.ratio = round3(1 + (d.ratio - 1) * 0.55);
+  }
+}
+
+function stepIndices() {
+  const list = [];
+  for (let i = state.stepsUp; i >= -state.stepsDown; i--) list.push(i);
+  return list;
+}
+
+function stepName(i) {
+  if (i === 0) return "base";
+  if (i > 0) return i === 1 ? "lg" : (i === 2 ? "xl" : (i - 1) + "xl");
+  return -i === 1 ? "sm" : (-i === 2 ? "xs" : (-i - 1) + "xs");
+}
+
+// size(i) = base × ratio^i, optionally tuned to whole pixels
+function sizePx(bp, i) {
+  const b = state.bp[bp];
+  const px = b.base * Math.pow(b.ratio, i);
+  return state.roundSizes ? Math.max(1, Math.round(px)) : px;
+}
+
+// Line-height factor eases down as size grows: lh = lhBase × (base/size)^curve
+function lineHeightPx(bp, px) {
+  const base = state.bp[bp].base;
+  let factor = state.lhBase * Math.pow(base / px, state.lhCurve);
+  factor = Math.min(2, Math.max(1.02, factor));
+  let lh = px * factor;
+  if (state.grid > 0) {
+    lh = Math.round(lh / state.grid) * state.grid;
+    if (lh < px * 0.98) lh += state.grid; // don't let snapping collapse leading
+  }
+  return lh;
+}
+
+// Letter-spacing: exponential tracking curve (a + b·e^(c·px)),
+// anchored to 0em at the base size, scaled by intensity.
+function letterSpacingEm(bp, px) {
+  const a = -0.0223, b = 0.185, c = -0.1745;
+  const f = (x) => a + b * Math.exp(c * x);
+  const base = state.bp[bp].base;
+  return round4(state.lsIntensity * (f(px) - f(base)));
+}
+
+function computeStep(bp, i) {
+  const px = sizePx(bp, i);
+  const lhPx = lineHeightPx(bp, px);
+  return {
+    i,
+    name: stepName(i),
+    px: round2(px),
+    rem: round4(px / 16),
+    lhPx: round2(lhPx),
+    lh: round3(lhPx / px),
+    ls: letterSpacingEm(bp, px)
+  };
+}
+
+function round2(n){ return Math.round(n * 100) / 100; }
+function round3(n){ return Math.round(n * 1000) / 1000; }
+function round4(n){ return Math.round(n * 10000) / 10000; }
+
+/* ---------- Fluid clamp() ---------- */
+
+// Linear interpolation of a step between the mobile scale at its viewport
+// and the desktop scale at its viewport.
+function fluidClamp(i) {
+  const lo = { px: sizePx("mobile", i), vw: state.bp.mobile.vw };
+  const hi = { px: sizePx("desktop", i), vw: state.bp.desktop.vw };
+  const min = Math.min(lo.px, hi.px), max = Math.max(lo.px, hi.px);
+  const slope = (hi.px - lo.px) / (hi.vw - lo.vw);
+  const intercept = lo.px - slope * lo.vw;
+  const minR = round4(min / 16), maxR = round4(max / 16);
+  if (round4(slope) === 0) return `${minR}rem`;
+  return `clamp(${minR}rem, ${round4(intercept / 16)}rem + ${round4(slope * 100)}vw, ${maxR}rem)`;
+}
+
+/* ---------- Rendering ---------- */
+
+const $ = (id) => document.getElementById(id);
+
+function fontStack() {
+  if (state.font === "__system-serif") return "Georgia, 'Times New Roman', serif";
+  if (state.font === "__system-sans") return "-apple-system, 'Helvetica Neue', sans-serif";
+  return `'${state.font}', serif`;
+}
+
+const loadedFonts = new Set(["Fraunces", "Archivo"]);
+function ensureFont(name) {
+  if (name.startsWith("__") || loadedFonts.has(name)) return;
+  loadedFonts.add(name);
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${name.replace(/ /g, "+")}:wght@300;400;500;600;700&display=swap`;
+  document.head.appendChild(link);
+}
+
+function renderControls() {
+  const b = state.bp[state.editBp];
+  $("baseSize").value = b.base;
+  $("baseVal").textContent = `${b.base}px`;
+  $("ratioVal").textContent = `×${b.ratio}`;
+
+  const presetMatch = Object.keys(RATIO_NAMES).find(r => Math.abs(+r - b.ratio) < 0.0005);
+  $("ratioPreset").value = presetMatch || "custom";
+  $("customRatioField").style.display = presetMatch ? "none" : "block";
+  if (!presetMatch) $("customRatio").value = b.ratio;
+
+  const isDerived = state.editBp !== "desktop";
+  $("autoField").style.display = isDerived ? "block" : "none";
+  if (isDerived) {
+    $("autoDerive").checked = !!b.auto;
+    $("autoHint").textContent = b.auto
+      ? `Following desktop: base ${b.base}px (never below 16px), ratio damped to ${b.ratio}.`
+      : "Set independently.";
+  }
+  $("baseSize").disabled = isDerived && b.auto;
+  $("ratioPreset").disabled = isDerived && b.auto;
+  $("customRatio").disabled = isDerived && b.auto;
+
+  $("lhVal").textContent = state.lhBase.toFixed(3);
+  $("lhCurveVal").textContent = state.lhCurve.toFixed(2);
+  $("gridVal").textContent = state.grid === 0 ? "off" : `${state.grid}px`;
+  document.querySelectorAll("#gridSeg button").forEach(x =>
+    x.classList.toggle("active", +x.dataset.grid === state.grid));
+  $("toggleGrid").disabled = state.grid === 0;
+  $("toggleGrid").classList.toggle("active", state.showGrid && state.grid > 0);
+  $("lsVal").textContent = state.lsIntensity === 0 ? "off" : `×${state.lsIntensity.toFixed(2)}`;
+  $("weightVal").textContent = state.weight;
+
+  $("wDesktop").textContent = `${state.bp.desktop.vw}`;
+  $("wTablet").textContent = `${state.bp.tablet.vw}`;
+  $("wMobile").textContent = `${state.bp.mobile.vw}`;
+}
+
+function renderSpecimen() {
+  const bp = state.viewBp;
+  const b = state.bp[bp];
+  const spec = $("specimen");
+  spec.style.maxWidth = b.vw + "px";
+  spec.style.setProperty("--g", state.grid + "px");
+  spec.classList.toggle("show-grid", state.showGrid && state.grid > 0);
+
+  const ratioName = RATIO_NAMES[String(b.ratio)] || (b.auto ? "derived" : "custom");
+  $("specimenLabel").textContent = state.fluid
+    ? `fluid · ${state.bp.mobile.vw}px → ${state.bp.desktop.vw}px · previewing ${bp} @ ${b.vw}px`
+    : `${bp} @ ${b.vw}px · base ${b.base}px · ratio ${b.ratio} (${ratioName})`;
+  $("specimenFont").textContent = `${state.font.replace(/^__system-/, "system ")} ${state.weight}`;
+
+  const isPage = state.view === "page";
+  $("stepList").style.display = isPage ? "none" : "";
+  $("pageView").style.display = isPage ? "" : "none";
+  $("sampleWrap").style.display = isPage ? "none" : "";
+  if (isPage) { renderPage(); return; }
+
+  const list = $("stepList");
+  list.innerHTML = "";
+  for (const i of stepIndices()) {
+    const s = computeStep(bp, i);
+    const d = computeStep("desktop", i), t = computeStep("tablet", i), m = computeStep("mobile", i);
+
+    const row = document.createElement("div");
+    row.className = "step-row" + (i === 0 ? " is-base" : "");
+
+    const meta = document.createElement("div");
+    meta.className = "step-meta";
+    const tri = [ ["mobile", m], ["tablet", t], ["desktop", d] ]
+      .map(([k, v]) => k === bp ? `<em>${v.px}</em>` : v.px).join(" / ");
+    meta.innerHTML =
+      `<span class="name">${s.name}</span>` +
+      `<span>${s.px}px · ${s.rem}rem</span>` +
+      `<span>lh ${s.lhPx} (${s.lh})</span>` +
+      `<span>ls ${s.ls}em</span>` +
+      `<span class="tri">m/t/d: ${tri}</span>`;
+
+    const sample = document.createElement("div");
+    sample.className = "step-sample";
+    sample.textContent = state.sample || "Sample";
+    sample.style.fontFamily = fontStack();
+    sample.style.fontWeight = state.weight;
+    sample.style.fontSize = s.px + "px";
+    sample.style.lineHeight = s.lhPx + "px";
+    sample.style.letterSpacing = s.ls + "em";
+
+    row.appendChild(meta);
+    row.appendChild(sample);
+    list.appendChild(row);
+  }
+}
+
+/* ---------- Page preview ----------
+   An example page showing ways the scale could be used: article
+   hierarchy, quote, list, caption, UI card. Spacing derives from
+   the baseline grid; body copy sits in a 66ch measure. */
+
+function renderPage() {
+  const bp = state.viewBp;
+  const U = state.stepsUp, D = state.stepsDown;
+  const cl = (i) => Math.max(-D, Math.min(U, i));
+  const g = state.grid || 4;
+  const snap = (v) => Math.max(g, Math.round(v / g) * g);
+
+  // Role → step mapping, adapting to how many steps exist
+  const iH1 = U >= 4 ? U - 1 : U;
+  const iH2 = Math.max(1, Math.round(U * 0.55));
+  const iH3 = Math.max(1, Math.round(U * 0.3)) === iH2 && iH2 > 1
+    ? iH2 - 1 : Math.max(1, Math.round(U * 0.3));
+  const roles = {
+    display: computeStep(bp, U),
+    h1: computeStep(bp, iH1),
+    h2: computeStep(bp, iH2),
+    h3: computeStep(bp, iH3),
+    lead: computeStep(bp, cl(1)),
+    body: computeStep(bp, 0),
+    caption: computeStep(bp, cl(-1)),
+    small: computeStep(bp, cl(-2))
+  };
+  const names = {
+    display: stepName(U), h1: stepName(iH1), h2: stepName(iH2), h3: stepName(iH3),
+    lead: stepName(cl(1)), body: "base", caption: stepName(cl(-1)), small: stepName(cl(-2))
+  };
+
+  const bodyW = 400;
+  const headW = state.weight;
+  // font/line/tracking from the scale; caps styles get +8% tracking (Butterick: 5–12%)
+  const st = (r, w, capsLs) =>
+    `font-family:${fontStack()};font-weight:${w};font-size:${r.px}px;` +
+    `line-height:${r.lhPx}px;letter-spacing:${capsLs != null ? capsLs : r.ls}em;`;
+  // USWDS: ~1.5× more space above a heading than below it
+  const hm = (r) => { const mb = snap(r.px * 0.35); return `margin:${snap(mb * 1.5)}px 0 ${mb}px;`; };
+  const pm = `margin:0 0 ${snap(roles.body.px)}px;`;  // ≥1em between paragraphs
+  const lbl = (tag, role) => `data-label="${tag} · --text-${names[role]} · ${roles[role].px}/${roles[role].lhPx}"`;
+
+  $("pageView").innerHTML = `
+  <div class="page">
+    <div class="measure">
+      <p class="pv kicker" ${lbl("kicker", "caption")} style="${st(roles.caption, 600, 0.08)}margin:0 0 ${snap(roles.caption.px * 0.75)}px;">Field notes · Typography</p>
+      <h1 class="pv" ${lbl("h1", "h1")} style="${st(roles.h1, headW)}margin:0 0 ${snap(roles.h1.px * 0.35)}px;">Terraces hold the hillside in place</h1>
+      <p class="pv byline" ${lbl("byline", "caption")} style="${st(roles.caption, 400)}margin:0 0 ${snap(roles.body.px * 1.5)}px;">By A. Reader · August 2026 · 6 min read</p>
+
+      <p class="pv lead" ${lbl("lead paragraph", "lead")} style="${st(roles.lead, 400)}${pm}">Long before anyone wrote about modular scales, farmers were stepping hillsides into level terraces — each one proportioned to the slope, each one holding water where it was needed.</p>
+
+      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">A type scale works the same way. Instead of choosing sizes one at a time, you choose a base and a ratio, and every level follows from the decision. The eye reads the page the way water moves down the hill: step by step, nothing abrupt, nothing arbitrary. This paragraph is set at the base size, on the line grid, in a measure of about sixty-six characters.</p>
+
+      <h2 class="pv" ${lbl("h2", "h2")} style="${st(roles.h2, headW)}${hm(roles.h2)}">Stepping down the slope</h2>
+      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">On a phone the hillside is steeper, so the terraces get shallower: the same base size, a gentler ratio. Headlines that command a desktop page would swamp a small screen, and the damped scale keeps every level usable.</p>
+
+      <blockquote class="pv" ${lbl("blockquote", "lead")} style="${st(roles.lead, 400)}margin:${snap(roles.body.px * 1.5)}px 0;">“Typography exists to honor content — the scale is just the terrace wall that keeps it from washing away.”</blockquote>
+
+      <h3 class="pv" ${lbl("h3", "h3")} style="${st(roles.h3, headW)}${hm(roles.h3)}">Water finds the level</h3>
+      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">Everything on this page comes from the exported tokens — no ad-hoc sizes anywhere:</p>
+      <ul class="pv" ${lbl("list", "body")} style="${st(roles.body, bodyW)}${pm}">
+        <li style="margin-bottom:${snap(roles.body.px * 0.5)}px;">Headings use the upper steps, with ~1.5× more space above than below.</li>
+        <li style="margin-bottom:${snap(roles.body.px * 0.5)}px;">Body, lead, and list text share the base step and its grid-tuned leading.</li>
+        <li>Captions, bylines, and fine print walk down the small steps.</li>
+      </ul>
+
+      <figure class="pv" ${lbl("figure + caption", "caption")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
+        <div class="figure-box">fig. 1 — placeholder</div>
+        <figcaption style="${st(roles.caption, 400)}margin-top:${snap(roles.caption.px * 0.5)}px;">Rice terraces quantize a continuous slope — a line grid does the same to leading.</figcaption>
+      </figure>
+
+      <div class="pv card" ${lbl("UI card", "body")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
+        <h4 style="${st(roles.h3, headW)}margin:0 0 ${snap(roles.h3.px * 0.35)}px;">Take the scale with you</h4>
+        <p style="${st(roles.caption, 400)}margin:0 0 ${snap(roles.body.px)}px;">Export CSS custom properties, fluid clamp() values, or JSON tokens.</p>
+        <span class="btn" style="${st(roles.caption, 600, 0.06)}line-height:1;">Export tokens</span>
+      </div>
+
+      <hr style="margin:${snap(roles.body.px * 1.5)}px 0;">
+      <p class="pv smallprint" ${lbl("fine print", "small")} style="${st(roles.small, 400)}margin:0;">Set in ${state.font.replace(/^__system-/, "system ")} · base ${state.bp[bp].base}px · ratio ${state.bp[bp].ratio} · ${state.grid > 0 ? state.grid + "px grid" : "grid off"} — hover any block to see its token.</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- Craft checks ----------
+   Live audit of the current breakpoint against:
+   - Butterick, Practical Typography (summary of key rules)
+   - Bringhurst via webtypography.net (section numbers)
+   - Google Fonts Knowledge, "The foundations of web typography" */
+
+// Estimated characters per line: average lowercase glyph width measured
+// on a canvas at the base size, divided into the specimen's content width.
+function measureCPL(bp) {
+  const b = state.bp[bp];
+  const canvas = measureCPL.c || (measureCPL.c = document.createElement("canvas"));
+  const ctx = canvas.getContext("2d");
+  ctx.font = `${state.weight} ${sizePx(bp, 0)}px ${fontStack()}`;
+  const avg = ctx.measureText("abcdefghijklmnopqrstuvwxyz").width / 26;
+  const contentW = b.vw - 44; // specimen padding
+  return avg > 0 ? Math.round(contentW / avg) : 0;
+}
+
+function renderCraft() {
+  const bp = state.viewBp;
+  const b = state.bp[bp];
+  const base = sizePx(bp, 0);
+  const baseStep = computeStep(bp, 0);
+  const cpl = measureCPL(bp);
+  const items = [];
+
+  // 1. Body size — Butterick: 15–25px; USWDS: at least 16px effective size
+  items.push({
+    status: base >= 16 && base <= 25 ? "pass" : base >= 15 && base <= 25 ? "info" : "warn",
+    title: `Body size — ${base}px`,
+    detail: base >= 16 && base <= 25
+      ? "Meets USWDS’s 16px minimum effective size and Butterick’s 15–25px range for body text on screen."
+      : base >= 15 && base <= 25
+        ? "Within Butterick’s 15–25px range, but below USWDS’s 16px minimum effective size for body text."
+        : `Outside the recommended 15–25px for body text on screen — adjust the ${bp} base size.`,
+    src: "Practical Typography · point size — USWDS · typography"
+  });
+
+  // 2. Line spacing — Butterick: 120–145%; USWDS reading-text tokens run to 1.62
+  const lhPct = Math.round(baseStep.lh * 100);
+  const lhOk = lhPct >= 120 && lhPct <= 145;
+  const lhReading = lhPct > 145 && lhPct <= 162;
+  items.push({
+    status: lhOk ? "pass" : lhReading ? "info" : "warn",
+    title: `Body line spacing — ${lhPct}%`,
+    detail: (lhOk
+      ? "Within Butterick’s 120–145% of the point size. USWDS tokens for comparison: 1.35 short text, 1.5 running text, 1.62 extended reading — nudge up for long-form."
+      : lhReading
+        ? "Above Butterick’s 120–145%, but within USWDS’s reading-text range (1.5 running text, 1.62 extended reading) — suited to long-form."
+        : "Outside Butterick’s 120–145% and USWDS’s reading-text tokens (1.35–1.62).")
+      + (state.grid > 0 ? ` (${baseStep.lhPx}px after ${state.grid}px grid tuning.)` : ""),
+    src: "Practical Typography · line spacing — USWDS · line-height tokens — Google Fonts Knowledge"
+  });
+
+  // 3. Measure — Butterick: 45–90 chars; Bringhurst/webtypography §2.1.2: 45–75, 66 ideal
+  const cplOk = cpl >= 40 && cpl <= 90;
+  const cplIdeal = cpl >= 45 && cpl <= 75;
+  items.push({
+    status: cplOk ? (cplIdeal ? "pass" : "info") : "warn",
+    title: `Measure — ≈${cpl} characters per line at ${b.vw}px`,
+    detail: cpl > 90
+      ? `Too wide for comfortable reading (Butterick: 45–90; Bringhurst’s ideal is 66). Constrain the text block, e.g. max-width: 66ch.`
+      : cpl < 40
+        ? "Under 40 characters per line — fine for captions, tight for body text. Consider a smaller base or tighter padding."
+        : cpl < 45
+          ? "Slightly under Butterick’s 45-character floor, but normal for a narrow viewport (Bringhurst allows 40–50 for narrow settings)."
+          : cplIdeal
+            ? "Comfortable measure (Butterick: 45–90 characters; Bringhurst’s ideal is 66)."
+            : "Acceptable per Butterick (45–90), but wider than Bringhurst’s 45–75 ideal — consider a max-width.",
+    src: "Practical Typography · line length — webtypography.net §2.1.2 — USWDS · measure (66-char target)"
+  });
+
+  // 4. Vertical rhythm — webtypography §2.2.2: measured intervals
+  items.push({
+    status: state.grid > 0 ? "pass" : "warn",
+    title: state.grid > 0 ? `Vertical rhythm — ${state.grid}px grid` : "Vertical rhythm — grid off",
+    detail: state.grid > 0
+      ? `Every line-height is tuned to a ${state.grid}px interval${state.roundSizes ? ", and sizes are rounded to whole pixels" : ""} — “add and delete vertical space in measured intervals.”`
+      : "Enable the 4px or 8px line grid so vertical space repeats in measured intervals.",
+    src: "webtypography.net §2.2.2"
+  });
+
+  // 5. Letterspacing — webtypography §2.1.6–2.1.8; Butterick: +5–12% for caps
+  items.push({
+    status: "info",
+    title: state.lsIntensity > 0
+      ? "Letterspacing — anchored at 0 for body"
+      : "Letterspacing — off",
+    detail: (state.lsIntensity > 0
+      ? "Lowercase body text keeps its natural fit (“don’t letterspace the lower case without a reason”); display steps tighten and small steps open up — the same direction USWDS prescribes (tighter for large headings, looser for small text). "
+      : "")
+      + "If you set strings in ALL CAPS or small caps, add 5–12% letterspacing to those styles yourself (USWDS also loosens uppercase).",
+    src: "webtypography.net §2.1.6–2.1.8 — Practical Typography · letterspacing — USWDS · letter-spacing"
+  });
+
+  // 6. Relative units — WebAIM: relative over absolute; WCAG 1.4.4 resize text
+  items.push({
+    status: "pass",
+    title: "Relative units",
+    detail: "Exports use rem font sizes, unitless line-heights, and em letter-spacing, so text scales with user font-size preferences and zoom (WCAG 1.4.4 resize text).",
+    src: "WebAIM · font units — WCAG 1.4.4"
+  });
+
+  // 7. WCAG 1.4.12 — layouts must tolerate user text-spacing overrides
+  items.push({
+    status: lhPct >= 150 ? "pass" : "info",
+    title: `Text-spacing override tolerance — WCAG 1.4.12`,
+    detail: (lhPct >= 150
+      ? `Body line spacing (${lhPct}%) already meets the 150% user-override level. `
+      : `Users may override line spacing to 150% of the font size (yours is ${lhPct}%), `)
+      + "letter spacing to 0.12em, word spacing to 0.16em, and paragraph spacing to 200% — make sure containers let text grow without clipping or overlap.",
+    src: "WebAIM · spacing — WCAG 1.4.12 text spacing"
+  });
+
+  // 8. Font legibility — WebAIM: simple faces, unambiguous glyphs, no long caps/bold/italic runs
+  items.push({
+    status: "info",
+    title: "Font legibility",
+    detail: `Check that the preview family keeps these glyphs distinguishable: `
+      + `<span style="font-family:${fontStack()};font-weight:${state.weight};font-size:1.4em;">Il1 · 0O · rn m · e o</span>`
+      + ` — and avoid long passages set in all caps, bold, or italic.`,
+    src: "WebAIM · readability"
+  });
+
+  // 9. Block spacing — USWDS paragraph/list/heading whitespace; Butterick 4–10pt
+  items.push({
+    status: "info",
+    title: "Block spacing",
+    detail: "When you apply this scale: leave at least 1em between paragraphs (Butterick: 4–10pt if you don’t indent), at least 0.5em between list items, and about 1.5× more space above a heading than below it"
+      + (state.grid > 0 ? ` — in multiples of the ${state.grid}px grid (var(--baseline-grid)).` : "."),
+    src: "USWDS · typography — Practical Typography · space between paragraphs"
+  });
+
+  // 10. Restraint — Google Fonts: limit families/weights for performance
+  items.push({
+    status: "info",
+    title: "Loading the font",
+    detail: "Limit the number of families, weights, and styles you ship — or use a variable font — to keep font payloads small.",
+    src: "Google Fonts Knowledge · optimizing performance"
+  });
+
+  const warns = items.filter(it => it.status === "warn").length;
+  $("craftBadge").textContent = warns ? `▲${warns}` : "✓";
+  $("craftBadge").className = "badge " + (warns ? "warns" : "ok");
+
+  $("craftScope").textContent = `${bp} @ ${b.vw}px · base ${base}px`;
+  $("craftList").innerHTML = items.map(it =>
+    `<div class="craft-item ${it.status}">
+       <span class="mark">${it.status === "pass" ? "✓" : it.status === "warn" ? "▲" : "i"}</span>
+       <span><span class="title">${it.title}</span> — <span class="detail">${it.detail}</span>
+         <span class="src">${it.src}</span></span>
+     </div>`).join("");
+}
+
+/* ---------- Export generation ---------- */
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function cssVars(bp, indent) {
+  return stepIndices().map(i => {
+    const s = computeStep(bp, i);
+    return `${indent}--text-${s.name}: ${s.rem}rem;\n` +
+           `${indent}--leading-${s.name}: ${s.lh};\n` +
+           `${indent}--tracking-${s.name}: ${s.ls}em;`;
+  }).join("\n");
+}
+
+function buildSteppedCSS() {
+  const d = state.bp.desktop, t = state.bp.tablet, m = state.bp.mobile;
+  return `/* Terrace type scale — stepped
+   desktop: base ${d.base}px × ${d.ratio}
+   tablet (≤${state.tabletMax}px): base ${t.base}px × ${t.ratio}
+   mobile (≤${state.mobileMax}px): base ${m.base}px × ${m.ratio} */
+
+:root {
+${state.grid > 0 ? `  /* vertical rhythm unit — line-heights are tuned to multiples of this */\n  --baseline-grid: ${state.grid}px;\n` : ""}${cssVars("desktop", "  ")}
+}
+
+@media (max-width: ${state.tabletMax}px) {
+  :root {
+${cssVars("tablet", "    ")}
+  }
+}
+
+@media (max-width: ${state.mobileMax}px) {
+  :root {
+${cssVars("mobile", "    ")}
+  }
+}
+
+/* Usage:
+   h1 {
+     font-size: var(--text-${stepName(state.stepsUp)});
+     line-height: var(--leading-${stepName(state.stepsUp)});
+     letter-spacing: var(--tracking-${stepName(state.stepsUp)});
+   } */
+`;
+}
+
+function buildFluidCSS() {
+  const d = state.bp.desktop, m = state.bp.mobile;
+  const vars = stepIndices().map(i => {
+    const s = computeStep("desktop", i);
+    return `  --text-${s.name}: ${fluidClamp(i)};\n` +
+           `  --leading-${s.name}: ${s.lh};\n` +
+           `  --tracking-${s.name}: ${s.ls}em;`;
+  }).join("\n");
+  return `/* Terrace type scale — fluid
+   Each step interpolates from the mobile scale (base ${m.base}px × ${m.ratio}
+   at ${m.vw}px viewport) to the desktop scale (base ${d.base}px × ${d.ratio}
+   at ${d.vw}px viewport), clamped at both ends.
+   Leading/tracking use desktop-scale values. */
+
+:root {
+${state.grid > 0 ? `  --baseline-grid: ${state.grid}px;\n` : ""}${vars}
+}
+`;
+}
+
+function buildJSON() {
+  deriveScales();
+  const out = {
+    $description: "Terrace responsive type scale",
+    baselineGrid: state.grid > 0 ? `${state.grid}px` : null,
+    breakpoints: {}
+  };
+  for (const bp of ["desktop", "tablet", "mobile"]) {
+    const b = state.bp[bp];
+    out.breakpoints[bp] = {
+      viewport: b.vw, base: b.base, ratio: b.ratio,
+      steps: Object.fromEntries(stepIndices().map(i => {
+        const s = computeStep(bp, i);
+        return [s.name, { px: s.px, rem: s.rem, lineHeight: s.lh, letterSpacing: `${s.ls}em` }];
+      }))
+    };
+  }
+  out.fluid = Object.fromEntries(stepIndices().map(i => [stepName(i), fluidClamp(i)]));
+  return JSON.stringify(out, null, 2);
+}
+
+let exportTab = "css";
+function renderExport() {
+  const code = exportTab === "css" ? buildSteppedCSS()
+             : exportTab === "fluid" ? buildFluidCSS()
+             : buildJSON();
+  let html = esc(code);
+  if (exportTab !== "json") {
+    html = html
+      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="c">$1</span>')
+      .replace(/(--[\w-]+)(?=:)/g, '<span class="p">$1</span>')
+      .replace(/: ([^;]+);/g, ': <span class="v">$1</span>;');
+  }
+  $("exportCode").innerHTML = html;
+  $("exportCode").dataset.raw = code;
+}
+
+/* ---------- Wiring ---------- */
+
+function update() {
+  deriveScales();
+  renderControls();
+  renderSpecimen();
+  renderCraft();
+  if (document.body.classList.contains("drawer-open")) renderExport();
+}
+
+// Re-measure CPL once web fonts finish loading
+if (document.fonts && document.fonts.addEventListener) {
+  document.fonts.addEventListener("loadingdone", () => update());
+}
+
+$("bpEditTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.editBp = btn.dataset.bp;
+  state.viewBp = btn.dataset.bp;
+  document.querySelectorAll("#bpEditTabs button").forEach(x => x.classList.toggle("active", x === btn));
+  document.querySelectorAll("#deviceTabs button").forEach(x => x.classList.toggle("active", x.dataset.bp === state.viewBp));
+  update();
+});
+
+$("viewSeg").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.view = btn.dataset.view;
+  document.querySelectorAll("#viewSeg button").forEach(x => x.classList.toggle("active", x === btn));
+  update();
+});
+
+$("deviceTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.viewBp = btn.dataset.bp;
+  document.querySelectorAll("#deviceTabs button").forEach(x => x.classList.toggle("active", x === btn));
+  update();
+});
+
+$("baseSize").addEventListener("input", (e) => {
+  state.bp[state.editBp].base = +e.target.value; update();
+});
+$("ratioPreset").addEventListener("change", (e) => {
+  if (e.target.value === "custom") {
+    $("customRatioField").style.display = "block";
+    state.bp[state.editBp].ratio = +$("customRatio").value;
+  } else {
+    state.bp[state.editBp].ratio = +e.target.value;
+  }
+  update();
+});
+$("customRatio").addEventListener("input", (e) => {
+  const v = +e.target.value;
+  if (v > 1 && v < 3) { state.bp[state.editBp].ratio = v; update(); }
+});
+$("autoDerive").addEventListener("change", (e) => {
+  state.bp[state.editBp].auto = e.target.checked; update();
+});
+$("stepsUp").addEventListener("input", (e) => { state.stepsUp = Math.min(8, Math.max(1, +e.target.value || 1)); update(); });
+$("stepsDown").addEventListener("input", (e) => { state.stepsDown = Math.min(4, Math.max(0, +e.target.value || 0)); update(); });
+$("lhBase").addEventListener("input", (e) => { state.lhBase = +e.target.value; update(); });
+$("lhCurve").addEventListener("input", (e) => { state.lhCurve = +e.target.value; update(); });
+$("gridSeg").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.grid = +btn.dataset.grid;
+  update();
+});
+$("roundSizes").addEventListener("change", (e) => { state.roundSizes = e.target.checked; update(); });
+$("toggleGrid").addEventListener("click", () => { state.showGrid = !state.showGrid; update(); });
+$("lsIntensity").addEventListener("input", (e) => { state.lsIntensity = +e.target.value; update(); });
+$("tabletMax").addEventListener("input", (e) => { state.tabletMax = +e.target.value || 1024; update(); });
+$("mobileMax").addEventListener("input", (e) => { state.mobileMax = +e.target.value || 640; update(); });
+$("fluidMode").addEventListener("change", (e) => {
+  state.fluid = e.target.checked;
+  exportTab = state.fluid ? "fluid" : "css";
+  document.querySelectorAll("#exportTabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === exportTab));
+  update();
+});
+$("fontSelect").addEventListener("change", (e) => { state.font = e.target.value; ensureFont(state.font); update(); });
+$("fontWeight").addEventListener("input", (e) => { state.weight = +e.target.value; update(); });
+$("sampleText").addEventListener("input", (e) => { state.sample = e.target.value; renderSpecimen(); });
+
+$("openExport").addEventListener("click", () => { renderExport(); document.body.classList.add("drawer-open"); });
+$("closeDrawer").addEventListener("click", () => document.body.classList.remove("drawer-open"));
+$("scrim").addEventListener("click", () => document.body.classList.remove("drawer-open"));
+
+$("openCraft").addEventListener("click", () => document.body.classList.add("craft-open"));
+$("closeCraft").addEventListener("click", () => document.body.classList.remove("craft-open"));
+$("craftScrim").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) document.body.classList.remove("craft-open");
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") document.body.classList.remove("drawer-open", "craft-open");
+});
+
+$("exportTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  exportTab = btn.dataset.tab;
+  document.querySelectorAll("#exportTabs button").forEach(x => x.classList.toggle("active", x === btn));
+  renderExport();
+});
+
+$("copyBtn").addEventListener("click", async () => {
+  await navigator.clipboard.writeText($("exportCode").dataset.raw || "");
+  $("copyBtn").textContent = "Copied ✓";
+  setTimeout(() => $("copyBtn").textContent = "Copy", 1400);
+});
+
+update();
+</script>
+</body>
+</html>
