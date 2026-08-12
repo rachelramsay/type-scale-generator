@@ -191,6 +191,7 @@
     margin-top: 10px;
   }
   .hint a { color: inherit; }
+  .hint:empty { display: none; }
 
   .seg { display: flex; border: 1px solid var(--ink); }
   .seg button {
@@ -758,7 +759,7 @@
         <input type="text" id="fontInput" list="fontList" value="Inter"
                placeholder="Search Google Fonts…" autocomplete="off" spellcheck="false">
         <datalist id="fontList"></datalist>
-        <p class="hint" id="fontStatus">Type to search the Google Fonts library.</p>
+        <p class="hint" id="fontStatus"></p>
       </div>
       <div class="field">
         <label>Weight <span class="val" id="weightVal"></span></label>
@@ -983,7 +984,6 @@ for (const entry of GFONTS) {
   });
 }
 const CAT_FALLBACK = { s: "serif", a: "sans-serif", d: "serif", h: "cursive", m: "monospace" };
-const CAT_LABEL = { s: "serif", a: "sans-serif", d: "display", h: "handwriting", m: "monospace" };
 
 function fontInfo(name) { return FONT_INDEX.get(name.toLowerCase()); }
 
@@ -1011,13 +1011,10 @@ function ensureFont(name) {
   document.head.appendChild(link);
 }
 
+// The status line only surfaces problems; it stays hidden otherwise.
 function fontStatusText() {
-  if (state.font.startsWith("__")) return "System font — no download.";
-  const info = fontInfo(state.font);
-  if (!info) return "Not in the library index — trying to load it anyway.";
-  const w = info.weights.filter(x => x >= 300 && x <= 700);
-  const loaded = document.fonts.check(`16px "${state.font}"`);
-  return `${loaded ? "✓ " : "… "}${info.name} · ${CAT_LABEL[info.cat]} · weights ${w.length ? w.join(", ") : "400 only"}`;
+  if (state.font.startsWith("__") || fontInfo(state.font)) return "";
+  return "Not in the library index — trying to load it anyway.";
 }
 
 function populateFontList() {
