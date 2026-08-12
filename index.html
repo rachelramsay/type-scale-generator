@@ -427,6 +427,16 @@
     display: block;
     margin-top: 2px;
   }
+  .craft-divider {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-40);
+    background: var(--paper-2);
+    padding: 5px 22px;
+    border-bottom: 1px solid var(--hairline);
+  }
   .craft-foot {
     padding: 10px 22px;
     font-size: 11px;
@@ -1266,10 +1276,11 @@ function renderCraft() {
   });
 
   // 3. Measure — Butterick: 45–90 chars; Bringhurst/webtypography §2.1.2: 45–75, 66 ideal
-  const cplOk = cpl >= 40 && cpl <= 90;
+  // Measure depends on how wide the text block is set, not on the scale
+  // itself — so it informs rather than warns.
   const cplIdeal = cpl >= 45 && cpl <= 75;
   items.push({
-    status: cplOk ? (cplIdeal ? "pass" : "info") : "warn",
+    status: cplIdeal ? "pass" : "info",
     title: `Measure — ≈${cpl} characters per line at ${b.vw}px`,
     detail: cpl > 90
       ? `Too wide for comfortable reading (Butterick: 45–90; Bringhurst’s ideal is 66). Constrain the text block, e.g. max-width: 66ch.`
@@ -1357,7 +1368,13 @@ function renderCraft() {
   $("craftBadge").className = "badge " + (warns ? "warns" : "ok");
 
   $("craftScope").textContent = `${bp} @ ${b.vw}px · base ${base}px`;
-  $("craftList").innerHTML = items.map(it =>
+
+  // Real problems first, passing checks next, informational notes last.
+  const rank = { warn: 0, pass: 1, info: 2 };
+  items.sort((a, b) => rank[a.status] - rank[b.status]);
+  const firstInfo = items.findIndex(it => it.status === "info");
+  $("craftList").innerHTML = items.map((it, idx) =>
+    (idx === firstInfo && firstInfo > 0 ? `<div class="craft-divider">Notes</div>` : "") +
     `<div class="craft-item ${it.status}">
        <span class="mark">${it.status === "pass" ? "✓" : it.status === "warn" ? "▲" : "i"}</span>
        <span><span class="title">${it.title}</span> — <span class="detail">${it.detail}</span>
