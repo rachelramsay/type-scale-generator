@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terrace — Responsive Type Scale Generator</title>
+<title>TypeNerd — Responsive Type Scale Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
@@ -67,13 +67,6 @@
     color: var(--ink-60);
     letter-spacing: 0.01em;
   }
-  header .credit {
-    margin-left: auto;
-    font-size: 11.5px;
-    color: var(--ink-40);
-  }
-  header .credit a { color: inherit; }
-
   /* ---------- Sidebar ---------- */
   aside {
     grid-area: sidebar;
@@ -213,6 +206,23 @@
   }
   .seg button:last-child { border-right: none; }
   .seg button.active { background: var(--ink); color: var(--paper); }
+
+  /* Weight stepper ticks: one labelled point per available weight */
+  .ticks { position: relative; height: 15px; margin: 0 7px; }
+  .ticks button {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--ink-40);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .ticks button:hover { color: var(--ink); }
+  .ticks button.active { color: var(--accent); font-weight: 500; }
 
   /* ---------- Main ---------- */
   main {
@@ -633,9 +643,8 @@
 
 <div class="app">
   <header>
-    <h1>Terrace<span class="tick">.</span></h1>
+    <h1>TypeNerd<span class="tick">.</span></h1>
     <span class="tagline">Responsive type scales — modular ratios stepped down for tablet &amp; mobile</span>
-    <span class="credit">methods after <a href="https://precise-type.com/" target="_blank" rel="noopener">precise-type.com</a></span>
   </header>
 
   <aside>
@@ -745,22 +754,16 @@
     <div class="group">
       <h2>Font</h2>
       <div class="field">
-        <label>Preview family</label>
-        <select id="fontSelect">
-          <option value="Fraunces" data-serif="1" selected>Fraunces</option>
-          <option value="Newsreader" data-serif="1">Newsreader</option>
-          <option value="Libre Caslon Text" data-serif="1">Libre Caslon Text</option>
-          <option value="Archivo">Archivo</option>
-          <option value="Instrument Sans">Instrument Sans</option>
-          <option value="Sora">Sora</option>
-          <option value="IBM Plex Mono" data-mono="1">IBM Plex Mono</option>
-          <option value="__system-serif">System serif</option>
-          <option value="__system-sans">System sans</option>
-        </select>
+        <label>Preview family <span class="val" id="fontCount"></span></label>
+        <input type="text" id="fontInput" list="fontList" value="Inter"
+               placeholder="Search Google Fonts…" autocomplete="off" spellcheck="false">
+        <datalist id="fontList"></datalist>
+        <p class="hint" id="fontStatus">Type to search the Google Fonts library.</p>
       </div>
       <div class="field">
         <label>Weight <span class="val" id="weightVal"></span></label>
-        <input type="range" id="fontWeight" min="300" max="700" step="100" value="500">
+        <input type="range" id="fontWeight" min="0" max="4" step="1" value="2">
+        <div class="ticks" id="weightTicks"></div>
       </div>
     </div>
   </aside>
@@ -805,7 +808,7 @@
       <button class="craft-close" id="closeCraft" aria-label="Close">✕</button>
     </div>
     <div id="craftList"></div>
-    <p class="craft-foot">Rules from
+    <p class="craft-foot">Scale methods after <a href="https://precise-type.com/" target="_blank" rel="noopener">precise-type.com</a> · Rules from
       <a href="https://practicaltypography.com/summary-of-key-rules.html" target="_blank" rel="noopener">Practical Typography</a> ·
       <a href="https://webtypography.net/toc" target="_blank" rel="noopener">webtypography.net</a> ·
       <a href="https://fonts.google.com/knowledge/using_type/the_foundations_of_web_typography" target="_blank" rel="noopener">Google Fonts Knowledge</a> ·
@@ -832,7 +835,7 @@
 
 <script>
 /* ============================================================
-   Terrace — responsive type scale generator
+   TypeNerd — responsive type scale generator
    Scale math after precise-type.com's modular-scale approach:
    size(i) = base × ratio^i, line-heights snapped to a pixel
    grid, letter-spacing on an exponential curve.
@@ -859,7 +862,7 @@ const state = {
   tabletMax: 1024,
   mobileMax: 640,
   fluid: false,
-  font: "Fraunces",
+  font: "Inter",
   weight: 500,
   sample: "The five boxing wizards jump quickly",
   bp: {
@@ -965,20 +968,73 @@ function fluidClamp(i) {
 
 const $ = (id) => document.getElementById(id);
 
+/* Google Fonts library index: "Family|weights|category" where weights are
+   digits (3 = 300 … 9 = 900) and category is s(erif), a=sans, d=display,
+   h=handwriting, m=mono. Generated from the library metadata at build time. */
+const GFONTS = ["Roboto|123456789|a","Open Sans|345678|a","Google Sans|4567|a","Inter|123456789|a","Montserrat|123456789|a","Poppins|123456789|a","Noto Sans JP|123456789|a","Lato|13479|a","Material Icons|4|m","Arimo|4567|a","Roboto Condensed|123456789|a","Roboto Mono|1234567|m","Material Symbols Outlined|1234567|m","Oswald|234567|a","Noto Sans|123456789|a","DM Sans|123456789|a","Nunito|23456789|a","Raleway|123456789|a","Playfair Display|456789|s","Nunito Sans|23456789|a","Rubik|3456789|a","Roboto Slab|123456789|s","Archivo Black|4|a","Noto Sans KR|123456789|a","Outfit|123456789|a","Ubuntu|3457|a","Manrope|2345678|a","Kanit|123456789|a","Merriweather|3456789|s","Black Ops One|4|d","Prompt|123456789|a","Work Sans|123456789|a","Lora|4567|s","Bebas Neue|4|a","Noto Sans TC|123456789|a","Saira|123456789|a","PT Sans|47|a","Bricolage Grotesque|2345678|a","Share Tech|4|a","Figtree|3456789|a","Mulish|23456789|a","Smooch Sans|123456789|a","Plus Jakarta Sans|2345678|a","Barlow|123456789|a","Quicksand|34567|a","Source Sans 3|23456789|a","Jost|123456789|a","Karla|2345678|a","IBM Plex Sans|1234567|a","Heebo|123456789|a","Archivo|123456789|a","Noto Serif|123456789|s","Material Icons Outlined|4|m","Fira Sans|123456789|a","JetBrains Mono|12345678|m","Titillium Web|234679|a","Space Grotesk|34567|a","Fjalla One|4|a","Noto Color Emoji|4|a","Noto Sans SC|123456789|a","PT Serif|47|s","Cormorant Garamond|34567|s","Noto Serif JP|23456789|s","Libre Baskerville|4567|s","Lobster Two|47|d","Changa One|4|d","Dancing Script|4567|h","Inconsolata|23456789|m","Alfa Slab One|4|d","Libre Franklin|123456789|a","Anton|4|a","Barlow Condensed|123456789|a","Josefin Sans|1234567|a","EB Garamond|45678|s","Instrument Serif|4|s","Public Sans|123456789|a","Source Code Pro|23456789|m","Cairo|23456789|a","Google Sans Flex|123456789|a","Assistant|2345678|a","Nanum Gothic|478|a","Lilita One|4|d","Hind Siliguri|34567|a","Mukta|2345678|a","Sora|12345678|a","Schibsted Grotesk|456789|a","Lexend|123456789|a","M PLUS Rounded 1c|1345789|a","Cabin|4567|a","Inter Tight|123456789|a","Noto Sans Khmer|123456789|a","Noto Sans Telugu|123456789|a","Material Symbols Rounded|1234567|m","Ramabhadra|4|a","Fraunces|123456789|s","Dosis|2345678|a","Orbitron|456789|a","Anek Telugu|12345678|a","Material Icons Round|4|m","Exo 2|123456789|a","Bitter|123456789|s","Roboto Flex|4|a","Rajdhani|34567|a","Red Hat Display|3456789|a","Urbanist|123456789|a","Geist|123456789|a","IBM Plex Mono|1234567|m","Hind|34567|a","Caveat|4567|h","DM Serif Display|4|s","Fredoka|34567|a","Oxygen|347|a","Crimson Text|467|s","Tajawal|2345789|a","Bungee|4|d","Pacifico|4|h","Instrument Sans|4567|a","Cinzel|456789|s","Slabo 27px|4|s","PT Sans Narrow|47|a","Source Serif 4|23456789|s","Gravitas One|4|d","Barlow Semi Condensed|123456789|a","Overpass|123456789|a","Lobster|4|d","Arvo|47|s","Material Icons Sharp|4|m","Merriweather Sans|345678|a","Abel|4|a","Noto Sans Thai|123456789|a","M PLUS 1p|1345789|a","Noto Sans Arabic|123456789|a","Teko|34567|a","Comfortaa|34567|d","Bodoni Moda|456789|s","Asap|123456789|a","Newsreader|2345678|s","Alumni Sans|123456789|a","Onest|123456789|a","Zen Kaku Gothic New|34579|a","Hanken Grotesk|123456789|a","ABeeZee|4|a","Rethink Sans|45678|a","Material Icons Two Tone|4|m","Chakra Petch|34567|a","Maven Pro|456789|a","Shadows Into Light|4|h","Abril Fatface|4|d","Geist Mono|123456789|m","Play|47|a","Domine|4567|s","Zilla Slab|34567|s","Space Mono|47|m","Almarai|3478|a","Be Vietnam Pro|123456789|a","Questrial|4|a","Lexend Deca|123456789|a","Albert Sans|123456789|a","DM Mono|345|m","Marcellus|4|s","Epilogue|123456789|a","Noto Sans Tamil|123456789|a","Archivo Narrow|4567|a","Exo|123456789|a","Varela Round|4|a","Nanum Myeongjo|478|s","League Spartan|123456789|a","Cormorant|34567|s","IBM Plex Serif|1234567|s","Syne|45678|a","Great Vibes|4|h","Crimson Pro|23456789|s","Zen Maru Gothic|34579|a","Unbounded|23456789|a","Indie Flower|4|h","Sofia Sans|123456789|a","Saira Condensed|123456789|a","Frank Ruhl Libre|3456789|s","Spectral|2345678|s","Noto Serif TC|23456789|s","Yellowtail|4|h","Viga|4|a","IBM Plex Sans Arabic|1234567|a","Geologica|123456789|a","Permanent Marker|4|h","Righteous|4|d","Angkor|4|d","Kalam|347|h","Vollkorn|456789|s","Amiri|47|s","Noto Serif SC|23456789|s","News Cycle|47|a","Alegreya Sans|1345789|a","LINE Seed JP|1478|a","Yanone Kaffeesatz|234567|a","Press Start 2P|4|d","Roboto Serif|123456789|s","Noto Serif KR|23456789|s","Satisfy|4|h","Hammersmith One|4|a","Sarabun|12345678|a","Atkinson Hyperlegible|47|a","Baloo 2|45678|d","Literata|23456789|s","Luckiest Guy|4|d","Noto Kufi Arabic|123456789|a","Russo One|4|a","Antic Slab|4|s","Rowdies|347|d","Shippori Mincho|45678|s","Khand|34567|a","Signika|34567|a","Catamaran|123456789|a","Prata|4|s","Fira Sans Condensed|123456789|a","Cardo|47|s","Courier Prime|47|m","Crete Round|4|s","Libre Barcode 39|4|d","Montserrat Alternates|123456789|a","Baskervville|4567|s","DM Serif Text|4|s","Tinos|47|s","Acme|4|a","Readex Pro|234567|a","Sawarabi Mincho|4|s","Alata|4|a","Lexend Giga|123456789|a","Special Elite|4|d","Gothic A1|123456789|a","Encode Sans|123456789|a","Bree Serif|4|s","Share Tech Mono|4|m","Aleo|123456789|s","Red Hat Text|34567|a","Sawarabi Gothic|4|a","Playfair|3456789|s","Noto Sans Display|123456789|a","Bangers|4|d","Tenor Sans|4|a","Noto Naskh Arabic|4567|s","Changa|2345678|a","Amatic SC|47|h","Alegreya|456789|s","Noto Sans Devanagari|123456789|a","Cantarell|47|a","Kumbh Sans|123456789|a","VT323|4|m","Chivo|123456789|a","Libre Caslon Text|47|s","Old Standard TT|47|s","Patua One|4|d","Courgette|4|h","Advent Pro|123456789|a","Fira Code|34567|m","Hind Madurai|34567|a","Audiowide|4|d","Material Symbols Sharp|1234567|m","Oleo Script|47|d","League Gothic|4|a","Comic Neue|347|h","Passion One|479|d","Allura|4|h","Rubik Mono One|4|a","Kaushan Script|4|h","Zen Old Mincho|45679|s","BIZ UDPGothic|47|a","Sanchez|4|s","Noto Sans Mono|123456789|a","Fugaz One|4|d","Noticia Text|47|s","Noto Nastaliq Urdu|4567|s","Josefin Slab|1234567|s","Chelsea Market|4|d","Sen|45678|a","Gruppo|4|a","Francois One|4|a","Signika Negative|34567|a","Golos Text|456789|a","Antonio|1234567|a","Titan One|4|d","Sacramento|4|h","Creepster|4|d","Biryani|2346789|a","Philosopher|47|a","Kosugi Maru|4|a","Yantramanav|134579|a","Patrick Hand|4|h","PT Sans Caption|47|a","Oxanium|2345678|d","Martel|2346789|s","Nanum Gothic Coding|47|h","Actor|4|a","Zeyada|4|h","IBM Plex Sans Condensed|1234567|a","Rokkitt|123456789|s","Cookie|4|h","Neuton|23478|s","Noto Sans Bengali|123456789|a","Unica One|4|d","Alexandria|123456789|a","Sofia Sans Condensed|123456789|a","Rock Salt|4|h","Commissioner|123456789|a","Amaranth|47|a","Quattrocento|47|s","Bai Jamjuree|234567|a","Didact Gothic|4|a","Paytone One|4|a","Krub|234567|a","Jura|34567|a","Black Han Sans|4|a","Gilda Display|4|s","Libre Bodoni|4567|s","Playfair Display SC|479|s","M PLUS 1|123456789|a","Gloria Hallelujah|4|h","Ubuntu Condensed|4|a","Berkshire Swash|4|h","Unna|47|s","Encode Sans Condensed|123456789|a","Vazirmatn|123456789|a","Gabarito|456789|d","Italianno|4|h","Quattrocento Sans|47|a","Material Symbols|1234567|m","Forum|4|d","Tangerine|47|h","Rammetto One|4|d","STIX Two Text|4567|s","Concert One|4|d","Playball|4|d","Cinzel Decorative|479|d","Asap Condensed|23456789|a","Dela Gothic One|4|d","Monoton|4|d","Chango|4|d","Delius|4|h","El Messiri|4567|a","Noto Sans Hebrew|123456789|a","Radio Canada|34567|a","Yeseva One|4|d","Pinyon Script|4|h","PT Mono|4|m","Alex Brush|4|h","Monda|4567|a","Quantico|47|a","Poiret One|4|d","Abhaya Libre|45678|s","Staatliches|4|d","Andada Pro|45678|s","Eater|4|d","Ubuntu Sans|12345678|a","Noto Serif Bengali|123456789|s","Pathway Gothic One|4|a","Faustina|345678|s","Architects Daughter|4|h","Saira Extra Condensed|123456789|a","Hind Guntur|34567|a","Homemade Apple|4|h","Arsenal|47|a","Istok Web|47|a","Lusitana|47|s","Google Sans Code|345678|m","IBM Plex Sans Thai|1234567|a","Lustria|4|s","Merienda|3456789|h","Saira Semi Condensed|123456789|a","Noto Sans HK|123456789|a","Gelasio|4567|s","Parisienne|4|h","Goldman|47|d","GFS Didot|4|s","Lalezar|4|a","Volkhov|47|s","Mitr|234567|a","Cormorant Infant|34567|s","Sorts Mill Goudy|4|s","Noto Sans Malayalam|123456789|a","Nanum Pen Script|4|h","Michroma|4|a","Dongle|347|a","Belleza|4|a","Vidaloka|4|s","Afacad|4567|a","Petrona|123456789|s","Reenie Beanie|4|h","Reddit Sans|23456789|a","Caveat Brush|4|h","Noto Serif Display|123456789|s","Ubuntu Mono|47|m","Averia Serif Libre|347|d","Noto Sans Symbols|123456789|a","Syncopate|47|a","Mada|23456789|a","Blinker|12346789|a","Hind Vadodara|34567|a","Six Caps|4|a","Fira Sans Extra Condensed|123456789|a","Varela|4|a","Cousine|47|m","Besley|456789|s","Sofia Sans Extra Condensed|123456789|a","Mukta Malar|2345678|a","Murecho|123456789|a","Host Grotesk|345678|a","Belanosima|467|a","Anek Latin|12345678|a","Calistoga|4|d","Bowlby One SC|4|d","Economica|47|a","Anonymous Pro|47|m","Amita|47|h","Zen Kaku Gothic Antique|34579|a","M PLUS 2|123456789|a","Alice|4|s","Mate|4|s","Shippori Mincho B1|45678|s","Londrina Solid|1349|d","Squada One|4|d","Gochi Hand|4|h","Jua|4|a","Anek Bangla|12345678|a","Racing Sans One|4|d","Suez One|4|s","Kaisei Decol|457|s","Georama|123456789|a","Caprasimo|4|d","Cuprum|4567|a","Fira Mono|457|m","Marck Script|4|h","Eczar|45678|s","Bad Script|4|h","Carter One|4|d","Protest Revolution|4|d","Pangolin|4|h","Adamina|4|s","Taviraj|123456789|s","Akshar|34567|a","Chewy|4|d","Potta One|4|d","Arapey|4|s","Khula|34678|a","Gudea|47|a","Ultra|4|s","Mona Sans|23456789|a","Ropa Sans|4|a","Nothing You Could Do|4|h","Mandali|4|a","Sriracha|4|h","Sofia|4|h","Hachi Maru Pop|4|h","Pridi|234567|s","Palanquin Dark|4567|a","Jersey 25|4|d","Alegreya Sans SC|1345789|a","Funnel Display|345678|d","Pragati Narrow|47|a","Handlee|4|h","Leckerli One|4|h","Mr Dafoe|4|h","Julius Sans One|4|a","Tilt Warp|4|d","Pirata One|4|d","REM|123456789|a","Wix Madefor Display|45678|a","Mrs Saint Delafield|4|h","Reem Kufi|4567|a","IM Fell English|4|s","Martel Sans|2346789|a","Basic|4|a","Damion|4|h","Reddit Sans Condensed|23456789|a","IBM Plex Sans JP|1234567|a","Familjen Grotesk|4567|a","Limelight|4|d","Niramit|234567|a","Aboreto|4|d","Kiwi Maru|345|s","ZCOOL KuaiLe|4|a","Italiana|4|a","MuseoModerno|123456789|d","Charis SIL|47|s","Faster One|4|d","Funnel Sans|345678|a","Lemonada|34567|d","Shrikhand|4|d","Covered By Your Grace|4|h","Yuji Mai|4|s","Darker Grotesque|3456789|a","UnifrakturMaguntia|4|d","Parkinsans|345678|a","Palanquin|1234567|a","Fahkwang|234567|a","Neucha|4|h","Wix Madefor Text|45678|a","Coda|48|d","Atkinson Hyperlegible Next|2345678|a","Allison|4|h","Ruda|456789|a","Skranji|47|d","Charm|47|h","Itim|4|h","Electrolize|4|a","Cabin Condensed|4567|a","Boogaloo|4|d","Ovo|4|s","Fustat|2345678|a","Bevan|4|s","Just Another Hand|4|h","Cormorant Unicase|34567|s","Sansita|4789|a","Cedarville Cursive|4|h","Overpass Mono|34567|m","Seaweed Script|4|d","Tomorrow|123456789|a","Quintessential|4|h","Aldrich|4|a","Rye|4|d","Noto Sans Gujarati|123456789|a","BenchNine|347|a","Krona One|4|a","Ms Madi|4|h","Secular One|4|a","Yrsa|34567|s","Libre Barcode 128|4|d","Kreon|34567|s","Lacquer|4|d","Ma Shan Zheng|4|h","Cutive Mono|4|m","Spline Sans|34567|a","Gloock|4|s","Germania One|4|d","ZCOOL QingKe HuangYou|4|a","Noto Sans Sinhala|123456789|a","Glegoo|47|s","Lateef|2345678|s","La Belle Aurore|4|h","Bona Nova SC|47|s","Grandstander|123456789|d","Sarina|4|d","Big Shoulders|123456789|d","Radley|4|s","Anuphan|1234567|a","Tiro Bangla|4|s","Baloo Da 2|45678|d","Rufina|47|s","Marcellus SC|4|s","K2D|12345678|a","Inria Serif|347|s","Andika|47|a","Libre Caslon Display|4|s","Caudex|47|s","Athiti|234567|a","Livvic|12345679|a","BIZ UDGothic|47|a","Pontano Sans|34567|a","Balsamiq Sans|47|d","Pixelify Sans|4567|d","Sofia Sans Semi Condensed|123456789|a","Vina Sans|4|d","Rozha One|4|s","Spinnaker|4|a","Tektur|456789|d","Stardos Stencil|47|d","Judson|47|s","Special Gothic Expanded One|4|a","Castoro|4|s","Noto Sans Meetei Mayek|123456789|a","Carlito|47|a","Days One|4|a","Geo|4|a","Bowlby One|4|d","Do Hyeon|4|a","Laila|34567|s","Oooh Baby|4|h","ADLaM Display|4|d","Bokor|4|d","Bellefair|4|s","Aclonica|4|a","Glory|12345678|a","Hina Mincho|4|s","Grenze Gotisch|123456789|d","Trirong|123456789|s","Herr Von Muellerhoff|4|h","Yatra One|4|d","Gowun Batang|47|s","IM Fell English SC|4|s","Shadows Into Light Two|4|h","Averia Libre|347|d","Klee One|46|h","Ibarra Real Nova|4567|s","Sintony|47|a","Gantari|123456789|a","Noto Sans Myanmar|123456789|a","Niconne|4|h","Podkova|45678|s","Bentham|4|s","Original Surfer|4|d","Elsie|49|d","Sarala|47|a","Fragment Mono|4|m","Barriecito|4|d","Lexend Exa|123456789|a","Arbutus Slab|4|s","AR One Sans|4567|a","PT Serif Caption|4|s","Metrophobic|4|a","Corben|47|d","Fredericka the Great|4|d","ZCOOL XiaoWei|4|a","Noto Sans Gurmukhi|123456789|a","Proza Libre|45678|a","Petit Formal Script|4|h","DotGothic16|4|a","Noto Sans Kannada|123456789|a","Pathway Extreme|123456789|a","Kosugi|4|a","Mochiy Pop One|4|a","Radio Canada Big|4567|a","Candal|4|a","Zen Antique|4|s","Yesteryear|4|h","Antic Didone|4|s","Cal Sans|4|a","Rampart One|4|d","Style Script|4|h","Cabin Sketch|47|d","BIZ UDPMincho|47|s","Alef|47|a","RocknRoll One|4|a","Pattaya|4|a","Wallpoet|4|d","Nixie One|4|d","Nanum Brush Script|4|h","Karma|34567|s","Markazi Text|4567|s","Mali|234567|h","Kameron|4567|s","Lexend Peta|123456789|a","Cormorant Upright|34567|s","Zalando Sans|23456789|a","Armata|4|a","Silkscreen|47|d","Fjord One|4|s","Fondamento|4|h","Brygada 1918|4567|s","Special Gothic Condensed One|4|a","Hepta Slab|123456789|s","Noto Sans Oriya|123456789|a","Annie Use Your Telescope|4|h","Oranienbaum|4|s","Sedgwick Ave Display|4|h","Knewave|4|d","Afacad Flux|123456789|a","Azeret Mono|123456789|m","Allerta Stencil|4|a","Nobile|457|a","Honk|4|d","Cormorant SC|34567|s","Share|47|a","Arizonia|4|h","Cantata One|4|s","Chonburi|4|d","Lexend Zetta|123456789|a","Grand Hotel|4|h","Goudy Bookletter 1911|4|s","Yusei Magic|4|a","Flow Circular|4|d","Chivo Mono|123456789|m","Noto Serif Georgian|123456789|s","Trocchi|4|s","IBM Plex Sans KR|1234567|a","Chiron GoRound TC|23456789|a","Graduate|4|s","Caladea|47|s","Alegreya SC|45789|s","Special Gothic|4567|a","Sniglet|48|d","Almendra|47|s","Red Hat Mono|34567|m","Average Sans|4|a","Uncial Antiqua|4|d","Baloo Thambi 2|45678|d","Alatsi|4|a","Halant|34567|s","Ephesis|4|h","Irish Grover|4|d","Overlock|479|d","Bellota Text|347|d","Koulen|4|d","Amiko|467|a","Norican|4|h","Major Mono Display|4|m","Rancho|4|h","Sigmar One|4|d","Encode Sans Expanded|123456789|a","Coming Soon|4|h","DynaPuff|4567|d","Mouse Memoirs|4|a","Schoolbell|4|h","IBM Plex Sans Hebrew|1234567|a","Poller One|4|d","Allerta|4|a","Telex|4|a","Noto Sans Georgian|123456789|a","Recursive|3456789|a","Cairo Play|23456789|a","Calligraffitti|4|h","Enriqueta|4567|s","Playpen Sans|12345678|h","Turret Road|234578|d","Rosario|34567|a","Anton SC|4|a","Croissant One|4|d","Marvel|47|a","Dawning of a New Day|4|h","Zen Dots|4|d","BioRhyme|2345678|s","Montagu Slab|1234567|s","Manjari|147|a","Agbalumo|4|d","Scada|47|a","Kristi|4|h","Kurale|4|s","STIX Two Math|4|s","Bubblegum Sans|4|d","Baloo Bhaijaan 2|45678|d","Spline Sans Mono|34567|m","Marmelad|4|a","Mansalva|4|h","Bayon|4|a","Noto Serif Devanagari|123456789|s","Kantumruy Pro|1234567|a","Akatab|456789|a","Hahmlet|123456789|s","Love Ya Like A Sister|4|d","Monsieur La Doulaise|4|h","TikTok Sans|3456789|a","Waiting for the Sunrise|4|h","Noto Emoji|34567|a","Aref Ruqaa|47|s","Qwitcher Grypen|47|h","Inria Sans|347|a","Rakkas|4|d","Rouge Script|4|h","Slackey|4|d","Battambang|13479|d","Lekton|47|m","Average|4|s","Delius Unicase|47|h","Young Serif|4|s","Bungee Inline|4|d","Poetsen One|4|d","Zalando Sans Expanded|23456789|a","Oxygen Mono|4|m","Oleo Script Swash Caps|47|d","Hanuman|123456789|s","Copse|4|s","Kodchasan|234567|a","Corinthia|47|h","Anek Devanagari|12345678|a","IM Fell DW Pica|4|s","Maitree|234567|s","Metamorphous|4|d","Jockey One|4|a","Tilt Neon|4|d","Baloo Bhai 2|45678|d","Anybody|123456789|d","Magra|47|a","Red Rose|34567|d","Hedvig Letters Serif|4|s","Kadwa|47|s","Noto Sans Ol Chiki|4567|a","Tiro Devanagari Hindi|4|s","Viaoda Libre|4|d","Bungee Spice|4|d","Fanwood Text|4|s","MedievalSharp|4|d","Over the Rainbow|4|h","Kaisei Opti|457|s","Syne Mono|4|m","Gabriela|4|s","Contrail One|4|d","Monomaniac One|4|a","Rubik Doodle Shadow|4|d","Hurricane|4|h","Noto Sans Warang Citi|4|a","Libre Barcode 39 Text|4|d","Mountains of Christmas|47|d","Vesper Libre|4579|s","Zen Kurenaido|4|a","Scheherazade New|4567|s","Carrois Gothic|4|a","Meow Script|4|h","Teachers|45678|a","Sansita Swashed|3456789|d","Sometype Mono|4567|m","KoHo|234567|a","Rochester|4|h","Inknut Antiqua|3456789|s","Walter Turncoat|4|h","Meddon|4|h","Rambla|47|a","Kalnia|1234567|s","Sunflower|357|a","Megrim|4|d","Gowun Dodum|4|a","Boldonse|4|d","Jomhuria|4|d","Zen Antique Soft|4|s","B612 Mono|47|m","Platypi|345678|s","Baloo Chettan 2|45678|d","Martian Mono|12345678|m","Square Peg|4|h","Encode Sans Semi Condensed|123456789|a","Mukta Mahee|2345678|a","Baloo Tamma 2|45678|d","B612|47|a","Codystar|34|d","Nova Square|4|d","Coustard|49|s","Bungee Shade|4|d","Rasa|34567|s","Gotu|4|a","Gaegu|347|h","Yuji Syuku|4|s","Birthstone|4|h","Noto Sans Thai Looped|123456789|a","Shantell Sans|345678|d","Asar|4|s","Gamja Flower|4|h","Vast Shadow|4|s","Frijole|4|d","Arima|1234567|d","Stick No Bills|2345678|a","Fasthand|4|d","Ruslan Display|4|d","Aguafina Script|4|h","David Libre|457|s","Supermercado One|4|d","Noto Serif Thai|123456789|s","Spectral SC|2345678|s","Gurajada|4|a","Alike|4|s","Miriam Libre|4567|a","Zain|234789|a","Fontdiner Swanky|4|d","SUSE|123456789|a","Vibur|4|h","Rubik Spray Paint|4|d","Bitcount Prop Single|123456789|d","Beth Ellen|4|h","Lily Script One|4|d","Asul|47|s","Give You Glory|4|h","Nova Mono|4|m","Zalando Sans SemiExpanded|23456789|a","Sue Ellen Francisco|4|h","Jaldi|47|a","Nosifer|4|d","Averia Sans Libre|347|d","Rubik Dirt|4|d","Voces|4|a","Tenali Ramakrishna|4|a","Denk One|4|a","Cherry Bomb One|4|d","Quando|4|s","Vollkorn SC|4679|s","Moon Dance|4|h","Piazzolla|123456789|s","MonteCarlo|4|h","Amarante|4|d","Buenard|4567|s","Coiny|4|d","Henny Penny|4|d","Xanh Mono|4|m","Cambay|47|a","Cutive|4|s","Comic Relief|47|d","Allan|47|d","Shippori Antique|4|a","Mukta Vaani|2345678|a","Inder|4|a","Fauna One|4|s","Poly|4|s","Puritan|47|a","Bagel Fat One|4|d","Happy Monkey|4|d","Brawler|47|s","Inclusive Sans|34567|a","Ysabeau Office|123456789|a","Finger Paint|4|d","Freeman|4|d","Prosto One|4|d","Euphoria Script|4|h","Birthstone Bounce|45|h","Macondo|4|d","Mr De Haviland|4|h","Della Respira|4|s","Noto Sans Symbols 2|4|a","Libertinus Serif|467|s","Capriola|4|a","Nerko One|4|h","Expletus Sans|4567|d","McLaren|4|d","Nata Sans|123456789|a","Montez|4|h","Carattere|4|h","Trade Winds|4|d","Cherry Cream Soda|4|d","Molengo|4|a","Tienne|479|s","Arya|47|a","Qwigley|4|h","Protest Strike|4|d","Noto Sans Armenian|123456789|a","Port Lligat Sans|4|a","Slabo 13px|4|s","Fresca|4|a","Libertinus Math|4|d","Unkempt|47|d","Padauk|47|a","Song Myung|4|s","Alike Angular|4|s","Balthazar|4|s","League Script|4|h","Abyssinica SIL|4|s","Vujahday Script|4|h","Asset|4|d","Delicious Handrawn|4|h","Freehand|4|d","Thasadith|47|a","Meie Script|4|h","Crafty Girls|4|h","Holtwood One SC|4|s","Voltaire|4|a","Noto Serif Khojki|4567|s","Julee|4|h","Road Rage|4|d","Bilbo Swash Caps|4|h","Odibee Sans|4|d","Wendy One|4|a","Aladin|4|d","Cambo|4|s","Anta|4|a","Moul|4|d","Kufam|456789|a","Grenze|123456789|s","Rubik Glitch|4|d","Redressed|4|h","The Girl Next Door|4|h","Pompiere|4|d","IM Fell Double Pica|4|s","Sunshiney|4|h","Anaheim|45678|a","Numans|4|a","New Rocker|4|d","Long Cang|4|h","Fuzzy Bubbles|47|h","Modern Antiqua|4|d","Charmonman|47|h","Rosarivo|4|s","Kaisei Tokumin|4578|s","Iceberg|4|d","Asta Sans|345678|a","Bigshot One|4|d","Kelly Slab|4|d","Ysabeau SC|123456789|a","Bakbak One|4|d","Doppio One|4|a","Antic|4|a","Encode Sans Semi Expanded|123456789|a","Mina|47|a","Kranky|4|d","Wire One|4|a","Zhi Mang Xing|4|h","Anek Malayalam|12345678|a","Patrick Hand SC|4|h","Sansation|347|a","Sarpanch|456789|a","Oregano|4|d","Poltawski Nowy|4567|s","Solway|34578|s","Orelega One|4|d","Aoboshi One|4|s","Sedgwick Ave|4|h","Modak|4|d","Yomogi|4|h","Kulim Park|23467|a","Doto|123456789|a","Baloo Paaji 2|45678|d","Suranna|4|s","Mallanna|4|a","Fuggles|4|h","Mako|4|a","Reggae One|4|d","Prociono|4|s","Noto Sans Lao|123456789|a","IM Fell French Canon|4|s","Bonheur Royale|4|h","Farro|3457|a","Loved by the King|4|h","Goblin One|4|d","Artifika|4|s","Nova Flat|4|d","Just Me Again Down Here|4|h","Sour Gummy|123456789|a","Federo|4|a","Metal Mania|4|d","Nokora|123456789|a","Atma|34567|d","Imprima|4|a","Griffy|4|d","Rubik Bubbles|4|d","Nova Round|4|d","Maiden Orange|4|s","Sail|4|d","Licorice|4|h","BhuTuka Expanded One|4|s","Noto Sans Ethiopic|123456789|a","Noto Serif Tamil|123456789|s","Mochiy Pop P One|4|a","Crushed|4|d","Whisper|4|h","UnifrakturCook|7|d","Salsa|4|d","Mirza|4567|s","Gentium Plus|47|s","Cherry Swash|47|d","Mohave|34567|a","Tauri|4|a","Truculenta|123456789|a","Bona Nova|47|s","Baloo Tammudu 2|45678|d","Dynalight|4|d","Mooli|4|a","Lexend Mega|123456789|a","Science Gothic|123456789|a","Libre Barcode 39 Extended Text|4|d","Train One|4|d","Monofett|4|m","Esteban|4|s","Madimi One|4|a","Bellota|347|d","M PLUS 1 Code|1234567|m","Life Savers|478|d","Galada|4|d","Swanky and Moo Moo|4|h","IM Fell Great Primer|4|s","Sumana|47|s","Shanti|4|a","Peralta|4|s","Edu SA Beginner|4567|h","Ribeye|4|d","Alan Sans|3456789|a","Dokdo|4|d","Miltonian|4|d","Stick|4|a","Sulphur Point|347|a","Sancreek|4|d","Hubot Sans|23456789|a","Elms Sans|123456789|a","WindSong|45|h","Gayathri|147|a","Shojumaru|4|d","Hi Melody|4|h","Clicker Script|4|h","Habibi|4|s","Waterfall|4|h","Gluten|123456789|d","Kablammo|4|d","Headland One|4|s","IM Fell DW Pica SC|4|s","Liu Jian Mao Cao|4|h","Karantina|347|d","Sevillana|4|d","Duru Sans|4|a","The Nautigal|47|h","NTR|4|a","Ledger|4|s","Montaga|4|s","Noto Serif HK|23456789|s","Baumans|4|d","Gasoek One|4|a","Protest Riot|4|d","Jaro|4|a","Victor Mono|1234567|m","Atomic Age|4|d","Anek Tamil|12345678|a","Kdam Thmor Pro|4|a","Noto Serif Hebrew|123456789|s","Sekuya|4|d","Reddit Mono|23456789|m","Harmattan|4567|a","Jersey 10|4|d","Smythe|4|d","Badeen Display|4|d","Luxurious Script|4|h","Medula One|4|d","Carme|4|a","Galindo|4|d","Poor Story|4|d","Ranchers|4|d","Stalemate|4|h","Amethysta|4|s","Lemon|4|d","Scope One|4|s","Kode Mono|4567|m","Kavoon|4|d","Nova Oval|4|d","Iceland|4|d","IBM Plex Sans Thai Looped|1234567|a","Edu TAS Beginner|4567|h","Phudu|3456789|d","Notable|4|a","Rationale|4|a","Gentium Book Plus|47|s","Overlock SC|4|d","Comme|123456789|a","Genos|123456789|a","Gemunu Libre|2345678|a","Baloo Bhaina 2|45678|d","Sigmar|4|d","Chau Philomene One|4|a","Alkatra|4567|d","IM Fell Double Pica SC|4|s","Spicy Rice|4|d","Emilys Candy|4|d","Manuale|345678|s","Gugi|4|d","Mozilla Headline|234567|a","Nova Slim|4|d","IM Fell French Canon SC|4|s","Agdasima|47|a","Varta|34567|a","Kenia|4|d","Freckle Face|4|d","Darumadrop One|4|d","Ceviche One|4|d","Pavanam|4|a","TASA Orbiter|45678|a","Bitcount Single|123456789|d","Orienta|4|a","Akronim|4|d","Odor Mean Chey|4|s","IM Fell Great Primer SC|4|s","Homenaje|4|a","Ruthie|4|h","Caesar Dressing|4|d","BIZ UDMincho|47|s","Chicle|4|d","Jolly Lodger|4|d","Ysabeau|123456789|a","Raleway Dots|4|d","Bigelow Rules|4|d","Faculty Glyphic|4|a","Londrina Outline|4|d","Libre Barcode 128 Text|4|d","Beau Rivage|4|h","Macondo Swash Caps|4|d","Noto Sans Caucasian Albanian|4|a","Eagle Lake|4|h","Bodoni Moda SC|456789|s","Benne|4|s","Alkalami|4|s","Chocolate Classical Sans|4|a","Miniver|4|d","Khmer|4|a","Solitreo|4|h","Mogra|4|d","Borel|4|h","Miltonian Tattoo|4|d","Astloch|47|d","Hedvig Letters Sans|4|a","Trispace|12345678|a","Timmana|4|a","Tiny5|4|a","Imbue|123456789|s","Mynerve|4|h","Mozilla Text|234567|a","Mea Culpa|4|h","Gupter|457|s","Vampiro One|4|d","Delius Swash Caps|4|h","Nova Cut|4|d","East Sea Dokdo|4|h","Anek Gujarati|12345678|a","Belgrano|4|s","Devonshire|4|h","Nova Script|4|d","Imperial Script|4|h","Edu NSW ACT Cursive|4567|h","Lavishly Yours|4|h","Jomolhari|4|s","Noto Serif Malayalam|123456789|s","Gorditas|47|d","Akaya Kanadaka|4|d","Passions Conflict|4|h","Kavivanar|4|h","Suwannaphum|13479|s","Playwrite NO|1234|h","Noto Sans Thaana|123456789|a","Stylish|4|a","Yeon Sung|4|d","Short Stack|4|h","Qahiri|4|a","Convergence|4|a","Pliant|123456789|a","Katibeh|4|d","Noto Sans Canadian Aboriginal|123456789|a","Noto Serif Kannada|123456789|s","Dangrek|4|d","Fascinate|4|d","Single Day|4|d","Lugrasimo|4|h","Grape Nuts|4|h","IBM Plex Sans Devanagari|1234567|a","Ballet|4|h","Zilla Slab Highlight|47|s","Zen Tokyo Zoo|4|d","Smooch|4|h","Anek Kannada|12345678|a","Playwrite CU|1234|h","Liter|4|a","Comforter|4|h","Fenix|4|s","Stint Ultra Condensed|4|s","Gafata|4|a","Geostar Fill|4|d","Noto Serif Telugu|123456789|s","Island Moments|4|h","Nabla|4|d","Margarine|4|d","LXGW WenKai TC|347|h","Rum Raisin|4|a","Shippori Antique B1|4|a","Stack Sans Text|234567|a","Moderustic|345678|a","Cantora One|4|a","Libertinus Sans|47|a","Playwrite IN|1234|h","Stack Sans Headline|234567|a","Noto Sans Old Hungarian|4|a","Underdog|4|d","Dai Banna SIL|34567|s","Strait|4|a","Yuji Boku|4|s","Sura|47|s","Amiri Quran|4|s","Mystery Quest|4|d","Redacted|4|d","Tiro Devanagari Sanskrit|4|s","Noto Sans Elbasan|4|a","Bruno Ace|4|d","Momo Trust Sans|2345678|a","Geom|3456789|a","Playwrite US Trad|1234|h","Noto Sans Khudawadi|4|a","Srisakdi|47|d","Rubik Scribble|4|d","Winky Sans|3456789|a","Barrio|4|d","Girassol|4|d","Junge|4|s","Braah One|4|a","Manufacturing Consent|4|d","Playpen Sans Arabic|12345678|h","Playwrite DE Grund|1234|h","Stoke|34|s","Playwrite IS|1234|h","Mate SC|4|s","Port Lligat Slab|4|s","Engagement|4|h","Tac One|4|a","Noto Sans Math|4|a","Text Me One|4|a","Sono|2345678|a","Akaya Telivigala|4|d","Englebert|4|a","Content|47|d","Beiruti|23456789|a","Edu AU VIC WA NT Guides|4567|h","Noto Music|4|a","Noto Sans Buhid|4|a","Kapakana|34|h","Baskervville SC|4567|s","Diphylleia|4|s","Kotta One|4|s","Gwendolyn|47|h","Spirax|4|d","Joan|4|s","Lovers Quarrel|4|h","Festive|4|h","Huninn|4|a","Seymour One|4|a","Cute Font|4|d","Sahitya|47|s","Cagliostro|4|a","Paprika|4|d","Dekko|4|h","My Soul|4|h","Noto Sans Tagalog|4|a","Carrois Gothic SC|4|a","Unlock|4|d","Siemreap|4|a","Caramel|4|h","Nuosu SIL|4|a","Erica One|4|d","Story Script|4|a","Sonsie One|4|d","Orbit|4|a","Jacquard 12|4|d","Romanesco|4|h","Gulzar|4|s","Montserrat Underline|123456789|a","Marhey|34567|d","Rubik Wet Paint|4|d","Jacques Francois|4|s","Flamenco|34|d","Yaldevi|234567|a","Linden Hill|4|s","Glass Antiqua|4|d","Tourney|123456789|d","Kaisei HarunoUmi|457|s","Keania One|4|d","Cactus Classical Serif|4|s","Sirin Stencil|4|d","Sree Krushnadevaraya|4|s","Playwrite GB S|1234|h","Offside|4|d","Water Brush|4|h","Inika|47|s","Climate Crisis|4|d","Preahvihear|4|a","Almendra SC|4|s","Encode Sans SC|123456789|a","Monomakh|4|d","Federant|4|d","Noto Sans Samaritan|4|a","Ramaraja|4|s","Kite One|4|a","National Park|2345678|a","Castoro Titling|4|d","Farsan|4|d","Tillana|45678|d","Tiro Devanagari Marathi|4|s","Handjet|123456789|d","Bilbo|4|h","Alumni Sans SC|123456789|a","Bruno Ace SC|4|d","Noto Sans Linear A|4|a","Vend Sans|34567|a","WDXL Lubrifont JP N|4|a","Noto Serif Ahom|4|s","Chela One|4|d","Dorsa|4|a","Anek Gurmukhi|12345678|a","Simonetta|49|d","SN Pro|23456789|a","Stint Ultra Expanded|4|s","New Tegomin|4|s","Autour One|4|d","Noto Serif Khmer|123456789|s","Rubik Moonrocks|4|d","Tilt Prism|4|d","Risque|4|d","Smokum|4|d","BBH Bartle|4|a","Ysabeau Infant|123456789|a","Ewert|4|d","Playwrite IE|1234|h","Condiment|4|h","Texturina|123456789|s","Koh Santepheap|13479|s","Jersey 20|4|d","Noto Sans Bhaiksuki|4|a","Emblema One|4|d","Reem Kufi Fun|4567|a","Noto Sans Javanese|4567|a","Luxurious Roman|4|d","Playwrite VN|1234|h","Noto Sans Coptic|4|a","Ravi Prakash|4|d","Noto Sans Mende Kikakui|4|a","Plaster|4|d","Shalimar|4|h","Wellfleet|4|s","Comforter Brush|4|h","Milonga|4|d","Alumni Sans Pinstripe|4|a","Libre Barcode EAN13 Text|4|d","Noto Serif Tibetan|123456789|s","Jersey 15|4|d","Sixtyfour|4|m","Wittgenstein|456789|s","Noto Sans Osmanya|4|a","Momo Trust Display|4|a","Noto Sans Avestan|4|a","Averia Gruesa Libre|4|d","Lexend Tera|123456789|a","Donegal One|4|s","Noto Sans Gothic|4|a","Cascadia Code|234567|a","Almendra Display|4|d","Jacques Francois Shadow|4|d","Jim Nightshade|4|h","Piedra|4|d","Fascinate Inline|4|d","Diplomata|4|d","Noto Sans Tai Viet|4|a","Chiron Hei HK|23456789|a","Fleur De Leah|4|h","Alyamama|3456789|s","Bungee Outline|4|d","Marko One|4|s","Galdeano|4|a","Metal|4|d","Praise|4|h","Arbutus|4|s","Anek Odia|12345678|a","Ancizar Serif|3456789|s","Elsie Swash Caps|49|d","Joti One|4|d","Dhurjati|4|a","Atkinson Hyperlegible Mono|2345678|a","Butcherman|4|d","GFS Neohellenic|47|a","Tiro Gurmukhi|4|s","Felipa|4|h","Konkhmer Sleokchher|4|d","Bungee Hairline|4|d","Meera Inimai|4|a","Akt|123456789|a","WDXL Lubrifont SC|4|a","Buda|3|d","Trykker|4|s","Noto Serif Gujarati|123456789|s","Playwrite AU NSW|1234|h","Noto Serif Lao|123456789|s","Fruktur|4|d","Tiro Kannada|4|s","Vibes|4|d","Stack Sans Notch|234567|a","Hubballi|4|a","Alumni Sans Collegiate One|4|a","Noto Serif Sinhala|123456789|s","Bubbler One|4|a","Chilanka|4|h","Ruluko|4|a","Libre Barcode 39 Extended|4|d","Londrina Shadow|4|d","Neonderthaw|4|h","New Amsterdam|4|a","Edu AU VIC WA NT Hand|4567|h","Playwrite VN Guides|4|h","Kumar One|4|d","Noto Serif Armenian|123456789|s","Chathura|13478|a","Dr Sugiyama|4|h","Babylonica|4|h","Lakki Reddy|4|h","Love Light|4|h","Noto Sans Lao Looped|123456789|a","Kirang Haerang|4|d","Tulpen One|4|d","Tiro Telugu|4|s","Big Shoulders Stencil|123456789|d","Bacasime Antique|4|s","Ranga|47|d","Momo Signature|4|a","Purple Purse|4|d","Miss Fajardose|4|h","Bpmf Huninn|4|a","Revalia|4|d","SUSE Mono|12345678|a","Reem Kufi Ink|4|a","Micro 5|4|d","Sedan SC|4|s","Sofadi One|4|d","Noto Sans Sora Sompeng|4567|a","Updock|4|h","Oi|4|d","Intel One Mono|34567|m","Aref Ruqaa Ink|47|s","Grey Qo|4|h","Foldit|123456789|d","Playwrite US Modern|1234|h","Tsukimi Rounded|34567|a","Gideon Roman|4|d","Kedebideri|456789|a","Lunasima|47|a","Lancelot|4|d","Inspiration|4|h","Ponomar|4|d","Passero One|4|d","Epunda Sans|3456789|a","Ribeye Marrow|4|d","Ancizar Sans|123456789|a","Peddana|4|s","Send Flowers|4|h","Diplomata SC|4|d","Gidugu|4|a","Rubik Pixels|4|d","Stalinist One|4|d","TASA Explorer|45678|a","Mr Bedfort|4|h","Noto Sans Batak|4|a","Uchen|4|s","Rubik Distressed|4|d","Rubik Iso|4|d","Arsenal SC|47|a","Noto Sans Anatolian Hieroglyphs|4|a","Princess Sofia|4|h","Noto Serif Yezidi|4567|s","Blaka|4|d","Noto Sans Glagolitic|4|a","Alumni Sans Inline One|4|d","Noto Sans Tangsa|4567|a","Noto Sans Adlam|4567|a","Oldenburg|4|d","Bahiana|4|d","Ubuntu Sans Mono|4567|m","Cause|123456789|h","Zen Loop|4|d","Bitcount Grid Double|123456789|d","Bitcount Ink|123456789|d","Noto Sans Cherokee|123456789|a","Noto Sans Mongolian|4|a","Hanalei Fill|4|d","Grechen Fuemen|4|h","Mrs Sheppards|4|h","Triodion|4|d","Geist Pixel|4|d","Twinkle Star|4|h","Noto Sans Balinese|4567|a","Jacquard 24|4|d","Rhodium Libre|4|s","Bonbon|4|h","Cascadia Mono|234567|a","Londrina Sketch|4|d","Sedan|4|s","Sixtyfour Convergence|4|m","Cossette Texte|47|a","BioRhyme Expanded|23478|s","Chenla|4|d","Noto Rashi Hebrew|123456789|s","Trochut|47|d","Kumar One Outline|4|d","Shizuru|4|d","Gidole|4|a","Flavors|4|d","Edu VIC WA NT Beginner|4567|h","Playwrite AU SA|1234|h","Cherish|4|h","Rubik Vinyl|4|d","Edu NSW ACT Foundation|4567|h","Lumanosimo|4|h","Playwrite RO|1234|h","LXGW WenKai Mono TC|347|m","Tiro Tamil|4|s","Are You Serious|4|h","Black And White Picture|4|d","Kings|4|h","Bitcount Grid Single|123456789|d","Iansui|4|h","Cossette Titre|47|a","Rubik Glitch Pop|4|d","Bytesized|4|a","Suravaram|4|s","Kolker Brush|4|h","Noto Sans Kaithi|4|a","Molle|4|h","Matemasie|4|a","Workbench|4|m","Snippet|4|a","Noto Sans Hanunoo|4|a","Parastoo|4567|s","Splash|4|h","Amarna|1234567|a","Playwrite AT|1234|h","Rubik Gemstones|4|d","Gveret Levin|4|h","Noto Sans Syloti Nagri|4|a","Noto Serif Tangut|4|s","Protest Guerrilla|4|d","Edu AU VIC WA NT Dots|4567|h","Moulpali|4|a","Gajraj One|4|d","Jacquarda Bastarda 9|4|d","Noto Serif Ethiopic|123456789|s","Taprom|4|d","Playwrite AU QLD|1234|h","Noto Serif Vithkuqi|4567|s","Explora|4|h","Chiron Sung HK|23456789|s","Libertinus Mono|4|m","Playwrite DK Uloopet|1234|h","UoqMunThenKhung|4|s","Rubik 80s Fade|4|d","Tagesschrift|4|d","Rubik Burned|4|d","Ruwudu|4567|s","BBH Hegarty|4|a","Butterfly Kids|4|h","Iosevka Charon|3457|m","Ojuju|2345678|a","Noto Sans Pahawh Hmong|4|a","Rubik Beastly|4|d","Bungee Tint|4|d","Rubik Doodle Triangles|4|d","Flow Rounded|4|d","Rubik Puddles|4|d","Playwrite DK Loopet|1234|h","Noto Sans Cypro Minoan|4|a","Geomini|2345678|a","Petemoss|4|h","Combo|4|d","M PLUS Code Latin|1234567|a","Ole|4|h","Agu Display|4|d","Noto Sans Shavian|4|a","Aubrey|4|d","Playwrite CA|1234|h","BBH Bogle|4|a","Noto Sans Carian|4|a","Noto Sans Syriac|123456789|a","Noto Sans Lydian|4|a","Geostar|4|d","Noto Sans Marchen|4|a","Playwrite HU|1234|h","Annapurna SIL|47|s","Lisu Bosa|23456789|s","Redacted Script|347|d","Noto Serif Toto|4567|s","Slackside One|4|h","WDXL Lubrifont TC|4|a","Karla Tamil Inclined|47|a","Tai Heritage Pro|47|s","Noto Serif Dogra|4|s","Sassy Frass|4|h","LXGW Marker Gothic|4|a","Langar|4|d","Playwrite NZ Basic|1234|h","Playwrite PL|1234|h","Noto Serif Myanmar|123456789|s","Playwrite ZA|1234|h","Asimovian|4|a","M PLUS U|123456789|a","Big Shoulders Inline|123456789|d","Lilex|1234567|m","Estonia|4|h","Flow Block|4|d","Noto Sans Multani|4|a","Noto Sans Vithkuqi|4567|a","Noto Sans Duployan|47|a","Ga Maamli|4|d","Bahianita|4|d","Rubik Maze|4|d","Coral Pixels|4|d","Playwrite AU TAS|1234|h","Phetsarath|47|a","Playwrite DE SAS|1234|h","Menbere|1234567|a","Playpen Sans Hebrew|12345678|h","Kalnia Glaze|1234567|d","Estedad|123456789|a","Palette Mosaic|4|d","Snowburst One|4|d","Tapestry|4|h","Playwrite AR|1234|h","Narnoor|45678|a","Chokokutai|4|d","Danfo|4|s","Edu SA Hand|4567|h","Noto Serif Balinese|4|s","Edu VIC WA NT Hand|4567|h","Rock 3D|4|d","Noto Sans NKo|4|a","Shafarik|4|d","Noto Sans Yi|4|a","Rubik Marker Hatch|4|d","Playwrite MX Guides|4|h","Noto Sans Sunuwar|4|a","Playwrite IT Moderna|1234|h","Rubik Broken Fax|4|d","Noto Sans Old Italic|4|a","Moirai One|4|d","Noto Sans Egyptian Hieroglyphs|4|a","Iosevka Charon Mono|3457|m","Datatype|123456789|m","Playwrite HR|1234|h","Ruge Boogie|4|h","Noto Sans Adlam Unjoined|4567|a","Noto Sans Takri|4|a","Playwrite ES|1234|h","Syne Tactile|4|d","Edu VIC WA NT Hand Pre|4567|h","Noto Sans Old Permic|4|a","Labrada|123456789|s","Bitcount|123456789|d","Ingrid Darling|4|h","Winky Rough|3456789|a","Noto Serif Makasar|4|s","Noto Sans Nag Mundari|4567|a","Linefont|123456789|d","Epunda Slab|3456789|s","Noto Sans Syriac Eastern|123456789|a","Playwrite MX|1234|h","Noto Serif Dives Akuru|4|s","Hind Mysuru|34567|a","Tirra|456789|a","Noto Serif Gurmukhi|123456789|s","BJCree|4567|s","Noto Sans New Tai Lue|4567|a","Noto Sans Palmyrene|4|a","Mingzat|4|a","Libertinus Serif Display|4|d","Playwrite PT|1234|h","Puppies Play|4|h","Rubik Microbe|4|d","Playpen Sans Deva|12345678|h","Montenegrin Gothic One|4|s","Miranda Sans|4567|a","Strichpunkt Sans|456789|a","Noto Sans Grantha|4|a","Edu AU VIC WA NT Pre|4567|h","Noto Sans Bamum|4567|a","Noto Serif Oriya|4567|s","Saira Stencil|123456789|d","Noto Sans Runic|4|a","Grandiflora One|4|s","Savate|23456789|a","Playwrite DE SAS Guides|4|h","Playwrite HR Lijeva|1234|h","Rubik Maps|4|d","Noto Sans Medefaidrin|4567|a","Moo Lah Lah|4|d","Playwrite NL|1234|h","Finlandica Text|123456789|a","Jaini Purva|4|d","Playwrite NZ|1234|h","Playwrite GB J|1234|h","Playwrite BE VLG|1234|h","Noto Traditional Nushu|34567|a","Sirivennela|4|a","Ponnala|4|d","Playpen Sans Thai|12345678|h","Playwrite DE LA Guides|4|h","Edu QLD Beginner|4567|h","Hanalei|4|d","Noto Sans Nandinagari|4|a","Namdhinggo|45678|s","Noto Sans Lisu|4567|a","Noto Serif Khitan Small Script|4|s","Noto Sans Wancho|4|a","Jacquard 12 Charted|4|d","Wavefont|123456789|d","Noto Sans Old Turkic|4|a","Noto Sans Tifinagh|4|a","Jaini|4|d","Noto Sans Nabataean|4|a","Bitcount Single Ink|123456789|d","Karla Tamil Upright|47|a","Exile|4|d","Noto Sans Osage|4|a","Noto Sans NKo Unjoined|4567|a","Noto Sans Old North Arabian|4|a","Noto Sans Elymaic|4|a","Playwrite SK|1234|h","Bitcount Prop Double Ink|123456789|d","Kay Pho Du|4567|s","Allkin|4|d","Noto Sans Tai Le|4|a","Blaka Ink|4|d","Playwrite BE WAL|1234|h","Noto Sans Hanifi Rohingya|4567|a","Playwrite AU VIC|1234|h","Yuji Hentaigana Akari|4|h","Noto Serif Ottoman Siyaq|4|s","Jersey 10 Charted|4|d","Rubik Storm|4|d","Playwrite NG Modern|1234|h","Noto Sans Indic Siyaq Numbers|4|a","Noto Sans Siddham|4|a","Maname|4|s","Noto Sans Old Persian|4|a","Noto Serif NP Hmong|4567|s","Rubik Lines|4|d","Hibur Mono|4|m","Blaka Hollow|4|d","Noto Sans Mahajani|4|a","Playwrite ID|1234|h","Noto Sans Sundanese|4567|a","Playwrite FR Moderne|1234|h","Noto Sans Cuneiform|4|a","Noto Serif Hentaigana|23456789|s","Noto Serif Grantha|4|s","Warnes|4|d","Bitcount Grid Single Ink|123456789|d","Noto Sans Zanabazar Square|4|a","Noto Znamenny Musical Notation|4|a","Tuffy|47|a","Playwrite DE LA|1234|h","Noto Sans Imperial Aramaic|4|a","Edu AU VIC WA NT Arrows|4567|h","Noto Sans Brahmi|4|a","Noto Sans Newa|4|a","Noto Sans Meroitic|4|a","Bitcount Prop Double|123456789|d","Playwrite BR Guides|4|h","Noto Sans Khojki|4|a","Betania Patmos|4|h","Edu NSW ACT Hand Pre|4567|h","Noto Sans Inscriptional Parthian|4|a","Yuyu|4|h","Libertinus Keyboard|4|d","Padyakke Expanded One|4|s","Yuyu Short|4|h","Bitcount Prop Single Ink|123456789|d","Playwrite CZ|1234|h","Sankofa Display|4|a","Noto Sans Cham|123456789|a","Bitcount Grid Double Ink|123456789|d","Playwrite TZ|1234|h","Noto Serif Todhri|4|s","Playwrite CO|1234|h","Noto Sans Inscriptional Pahlavi|4|a","Noto Sans Tagbanwa|4|a","Playwrite PE|1234|h","Noto Sans Tai Tham|4567|a","Matangi|3456789|a","Playwrite CO Guides|4|h","Noto Sans Ugaritic|4|a","Edu QLD Hand|4567|h","Noto Sans Miao|4|a","Playwrite NZ Guides|4|h","Noto Sans Kawi|4567|a","Finlandica Headline|123456789|a","Micro 5 Charted|4|d","Jacquard 24 Charted|4|d","Noto Sans Sharada|4|a","Bpmf Iansui|4|h","Noto Sans Buginese|4|a","Jersey 15 Charted|4|d","Bpmf Zihi Kai Std|4|a","Playwrite US Trad Guides|4|h","Playwrite CL|1234|h","Noto Sans Old South Arabian|4|a","Noto Sans Sogdian|4|a","Noto Sans Chakma|4|a","Noto Sans SignWriting|4|a","Noto Sans Rejang|4|a","Pochaevsk|4|d","Kanchenjunga|4567|a","Playwrite GB J Guides|4|h","Playwrite ES Deco|1234|h","Jersey 25 Charted|4|d","Noto Serif Old Uyghur|4|s","Noto Sans Vai|4|a","Alien Block|4|d","Noto Sans Bassa Vah|4567|a","Idiqlat|234|s","Noto Sans Cypriot|4|a","Noto Sans Mayan Numerals|4|a","Playwrite BR|1234|h","Noto Sans Linear B|4|a","Noto Sans Tamil Supplement|4|a","Noto Sans Hatran|4|a","Yarndings 20|4|d","Noto Sans Mro|4|a","Noto Sans Syriac Western|123456789|a","Noto Sans Tirhuta|4|a","Yarndings 20 Charted|4|d","Jersey 20 Charted|4|d","Betania Patmos In|4|h","Playwrite AU VIC Guides|4|h","Noto Sans Masaram Gondi|4|a","Yuji Hentaigana Akebono|4|h","Noto Sans Mandaic|4|a","Ramsina|4|s","Noto Sans Kayah Li|4567|a","Noto Sans Phoenician|4|a","Noto Sans Modi|4|a","Noto Sans Limbu|4|a","Noto Sans Gunjala Gondi|4567|a","Noto Sans Deseret|4|a","Betania Patmos GDL|4|h","Noto Sans Pau Cin Hau|4|a","Noto Sans PhagsPa|4|a","Betania Patmos In GDL|4|h","Noto Sans Soyombo|4|a","Noto Sans Psalter Pahlavi|4|a","Jacquarda Bastarda 9 Charted|4|d","Noto Sans Ogham|4|a","Noto Sans Chorasmian|4|a","Noto Sans Lepcha|4|a","Noto Sans Nushu|4|a","Playwrite PL Guides|4|h","Playwrite NZ Basic Guides|4|h","Playwrite PT Guides|4|h","Playwrite DE VA|1234|h","Playwrite FR Trad|1234|h","Playwrite IT Trad|1234|h","Noto Sans Saurashtra|4|a","Noto Sans Kharoshthi|4|a","Noto Sans Old Sogdian|4|a","Playwrite PE Guides|4|h","Yarndings 12|4|d","Playwrite TZ Guides|4|h","Playwrite GB S Guides|4|h","Noto Sans Manichaean|4|a","Playwrite DE Grund Guides|4|h","Playwrite IE Guides|4|h","Playwrite BE WAL Guides|4|h","Playwrite IN Guides|4|h","Playwrite CU Guides|4|h","Noto Sans Lycian|4|a","Yarndings 12 Charted|4|d","Playwrite AR Guides|4|h","Playwrite IT Moderna Guides|4|h","Playwrite DK Uloopet Guides|4|h","Playwrite DE VA Guides|4|h","Playwrite HU Guides|4|h","Playwrite FR Moderne Guides|4|h","Playwrite IT Trad Guides|4|h","Playwrite ES Deco Guides|4|h","Playwrite FR Trad Guides|4|h","Playwrite AU SA Guides|4|h","Playwrite ZA Guides|4|h","Playwrite US Modern Guides|4|h","Playwrite CL Guides|4|h","Playwrite AU TAS Guides|4|h","Playwrite ID Guides|4|h","Playwrite NG Modern Guides|4|h","Playwrite DK Loopet Guides|4|h","Playwrite AU NSW Guides|4|h","Playwrite NL Guides|4|h","Playwrite RO Guides|4|h","Playwrite AT Guides|4|h","Playwrite HR Lijeva Guides|4|h","Playwrite ES Guides|4|h","Playwrite CZ Guides|4|h","Playwrite AU QLD Guides|4|h","Playwrite CA Guides|4|h","Playwrite HR Guides|4|h","Playwrite BE VLG Guides|4|h","Playwrite SK Guides|4|h","Playwrite NO Guides|4|h","Playwrite IS Guides|4|h"];
+
+const FONT_INDEX = new Map();
+for (const entry of GFONTS) {
+  const [name, w, cat] = entry.split("|");
+  FONT_INDEX.set(name.toLowerCase(), {
+    name,
+    weights: [...w].map(d => +d * 100),
+    cat: cat || "s"
+  });
+}
+const CAT_FALLBACK = { s: "serif", a: "sans-serif", d: "serif", h: "cursive", m: "monospace" };
+const CAT_LABEL = { s: "serif", a: "sans-serif", d: "display", h: "handwriting", m: "monospace" };
+
+function fontInfo(name) { return FONT_INDEX.get(name.toLowerCase()); }
+
 function fontStack() {
   if (state.font === "__system-serif") return "Georgia, 'Times New Roman', serif";
   if (state.font === "__system-sans") return "-apple-system, 'Helvetica Neue', sans-serif";
-  return `'${state.font}', serif`;
+  const info = fontInfo(state.font);
+  return `'${state.font}', ${info ? CAT_FALLBACK[info.cat] : "serif"}`;
 }
 
-const loadedFonts = new Set(["Fraunces", "Archivo"]);
+const loadedFonts = new Set();
 function ensureFont(name) {
   if (name.startsWith("__") || loadedFonts.has(name)) return;
   loadedFonts.add(name);
+  const info = fontInfo(name);
+  // request only the weights the family actually has (in the slider's range)
+  const weights = info
+    ? info.weights.filter(w => w >= 300 && w <= 700)
+    : [400, 700];
+  const fam = name.replace(/ /g, "+") +
+    (weights.length ? `:wght@${weights.join(";")}` : "");
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${name.replace(/ /g, "+")}:wght@300;400;500;600;700&display=swap`;
+  link.href = `https://fonts.googleapis.com/css2?family=${fam}&display=swap`;
   document.head.appendChild(link);
+}
+
+function fontStatusText() {
+  if (state.font.startsWith("__")) return "System font — no download.";
+  const info = fontInfo(state.font);
+  if (!info) return "Not in the library index — trying to load it anyway.";
+  const w = info.weights.filter(x => x >= 300 && x <= 700);
+  const loaded = document.fonts.check(`16px "${state.font}"`);
+  return `${loaded ? "✓ " : "… "}${info.name} · ${CAT_LABEL[info.cat]} · weights ${w.length ? w.join(", ") : "400 only"}`;
+}
+
+function populateFontList() {
+  $("fontCount").textContent = `${GFONTS.length.toLocaleString()} families`;
+  const dl = $("fontList");
+  const frag = document.createDocumentFragment();
+  for (const label of ["System serif", "System sans"]) {
+    const o = document.createElement("option");
+    o.value = label;
+    frag.appendChild(o);
+  }
+  for (const entry of FONT_INDEX.values()) {
+    const o = document.createElement("option");
+    o.value = entry.name;
+    frag.appendChild(o);
+  }
+  dl.appendChild(frag);
 }
 
 function renderControls() {
@@ -1012,7 +1068,7 @@ function renderControls() {
   $("toggleGrid").disabled = state.grid === 0;
   $("toggleGrid").classList.toggle("active", state.showGrid && state.grid > 0);
   $("lsVal").textContent = state.lsIntensity === 0 ? "off" : `×${state.lsIntensity.toFixed(2)}`;
-  $("weightVal").textContent = state.weight;
+  renderWeightControl();
 
   $("wDesktop").textContent = `${state.bp.desktop.vw}`;
   $("wTablet").textContent = `${state.bp.tablet.vw}`;
@@ -1327,7 +1383,7 @@ function cssVars(bp, indent) {
 
 function buildSteppedCSS() {
   const d = state.bp.desktop, t = state.bp.tablet, m = state.bp.mobile;
-  return `/* Terrace type scale — stepped
+  return `/* TypeNerd type scale — stepped
    desktop: base ${d.base}px × ${d.ratio}
    tablet (≤${state.tabletMax}px): base ${t.base}px × ${t.ratio}
    mobile (≤${state.mobileMax}px): base ${m.base}px × ${m.ratio} */
@@ -1365,7 +1421,7 @@ function buildFluidCSS() {
            `  --leading-${s.name}: ${s.lh};\n` +
            `  --tracking-${s.name}: ${s.ls}em;`;
   }).join("\n");
-  return `/* Terrace type scale — fluid
+  return `/* TypeNerd type scale — fluid
    Each step interpolates from the mobile scale (base ${m.base}px × ${m.ratio}
    at ${m.vw}px viewport) to the desktop scale (base ${d.base}px × ${d.ratio}
    at ${d.vw}px viewport), clamped at both ends.
@@ -1380,7 +1436,7 @@ ${state.grid > 0 ? `  --baseline-grid: ${state.grid}px;\n` : ""}${vars}
 function buildJSON() {
   deriveScales();
   const out = {
-    $description: "Terrace responsive type scale",
+    $description: "TypeNerd responsive type scale",
     baselineGrid: state.grid > 0 ? `${state.grid}px` : null,
     breakpoints: {}
   };
@@ -1424,9 +1480,12 @@ function update() {
   if (document.body.classList.contains("drawer-open")) renderExport();
 }
 
-// Re-measure CPL once web fonts finish loading
+// Re-measure CPL and refresh load status once web fonts finish loading
 if (document.fonts && document.fonts.addEventListener) {
-  document.fonts.addEventListener("loadingdone", () => update());
+  document.fonts.addEventListener("loadingdone", () => {
+    $("fontStatus").textContent = fontStatusText();
+    update();
+  });
 }
 
 $("bpEditTabs").addEventListener("click", (e) => {
@@ -1491,8 +1550,104 @@ $("fluidMode").addEventListener("change", (e) => {
   document.querySelectorAll("#exportTabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === exportTab));
   update();
 });
-$("fontSelect").addEventListener("change", (e) => { state.font = e.target.value; ensureFont(state.font); update(); });
-$("fontWeight").addEventListener("input", (e) => { state.weight = +e.target.value; update(); });
+// Resolve typed text to a family: exact match, then prefix, then substring.
+function resolveFont(raw) {
+  const q = raw.trim().toLowerCase();
+  if (!q) return null;
+  if (q === "system serif") return "__system-serif";
+  if (q === "system sans") return "__system-sans";
+  const exact = FONT_INDEX.get(q);
+  if (exact) return exact.name;
+  let prefix = null, substr = null;
+  for (const [key, info] of FONT_INDEX) {
+    if (!prefix && key.startsWith(q)) prefix = info.name;
+    if (!substr && key.includes(q)) substr = info.name;
+    if (prefix) break;
+  }
+  return prefix || substr;
+}
+
+// Weights the current preview family actually offers (within the loaded
+// 300–700 range); system fonts get the full set, unknown families 400/700.
+function availableWeights() {
+  if (state.font.startsWith("__")) return [300, 400, 500, 600, 700];
+  const info = fontInfo(state.font);
+  if (!info) return [400, 700];
+  const ws = info.weights.filter(w => w >= 300 && w <= 700);
+  return ws.length ? ws : [400];
+}
+
+function renderWeightControl() {
+  const ws = availableWeights();
+  if (!ws.includes(state.weight)) {
+    state.weight = ws.reduce((a, b) =>
+      Math.abs(b - state.weight) < Math.abs(a - state.weight) ? b : a);
+  }
+  const sl = $("fontWeight");
+  sl.max = ws.length - 1;
+  sl.value = ws.indexOf(state.weight);
+  sl.disabled = ws.length === 1;
+  $("weightVal").textContent = state.weight;
+  $("weightTicks").innerHTML = ws.map((w, i) => {
+    const x = ws.length === 1 ? 50 : (i / (ws.length - 1)) * 100;
+    return `<button data-w="${w}" class="${w === state.weight ? "active" : ""}" style="left:${x}%">${w}</button>`;
+  }).join("");
+}
+
+function fontDisplayName() {
+  return state.font === "__system-serif" ? "System serif"
+       : state.font === "__system-sans" ? "System sans"
+       : state.font;
+}
+
+function applyFont(name, inputEl) {
+  state.font = name;
+  if (inputEl) inputEl.value = fontDisplayName();
+  ensureFont(state.font);
+  $("fontStatus").textContent = fontStatusText();
+  update();
+}
+
+// Fires while typing AND when a datalist suggestion is clicked: apply
+// immediately on an exact match so picking from the list just works.
+$("fontInput").addEventListener("input", (e) => {
+  const raw = e.target.value.trim().toLowerCase();
+  const hit = raw === "system serif" ? "__system-serif"
+            : raw === "system sans" ? "__system-sans"
+            : FONT_INDEX.get(raw)?.name;
+  if (hit && hit !== state.font) applyFont(hit, e.target);
+});
+
+// Enter or blur: accept partial names too (prefix/substring match).
+// An empty field (e.g. focused, then clicked away) restores the current font.
+$("fontInput").addEventListener("change", (e) => {
+  const raw = e.target.value.trim();
+  if (!raw) { e.target.value = fontDisplayName(); return; }
+  const hit = resolveFont(raw);
+  if (hit) {
+    if (hit !== state.font) applyFont(hit, e.target);
+    else e.target.value = fontDisplayName();
+  } else {
+    $("fontStatus").textContent = `No family matching “${raw}” — try another name.`;
+  }
+});
+
+// Clear on focus so the full suggestion list opens and typing starts fresh;
+// blur without a choice restores the name via the change handler above.
+$("fontInput").addEventListener("focus", (e) => { e.target.value = ""; });
+$("fontInput").addEventListener("blur", (e) => {
+  if (!e.target.value.trim()) e.target.value = fontDisplayName();
+});
+$("fontWeight").addEventListener("input", (e) => {
+  const ws = availableWeights();
+  state.weight = ws[+e.target.value] ?? ws[0];
+  update();
+});
+$("weightTicks").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.weight = +btn.dataset.w;
+  update();
+});
 $("sampleText").addEventListener("input", (e) => { state.sample = e.target.value; renderSpecimen(); });
 
 $("openExport").addEventListener("click", () => { renderExport(); document.body.classList.add("drawer-open"); });
@@ -1522,6 +1677,9 @@ $("copyBtn").addEventListener("click", async () => {
   setTimeout(() => $("copyBtn").textContent = "Copy", 1400);
 });
 
+populateFontList();
+ensureFont(state.font);
+$("fontStatus").textContent = fontStatusText();
 update();
 </script>
 </body>

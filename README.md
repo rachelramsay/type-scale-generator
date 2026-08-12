@@ -1,8 +1,8 @@
-# Terrace
+# TypeNerd
 
 A responsive type scale generator — modular ratios stepped down for tablet and mobile.
 
-Terrace is a single self-contained HTML file. Open `index.html` in a browser and you have the whole tool; there is no build step and no dependencies (Google Fonts are loaded for previews, but everything else works offline).
+TypeNerd is a single self-contained HTML file. Open `index.html` in a browser and you have the whole tool; there is no build step and no dependencies (Google Fonts are loaded for previews, but everything else works offline).
 
 ## What it does
 
