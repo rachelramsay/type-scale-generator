@@ -7,12 +7,12 @@ TypeNerd is a single self-contained HTML file. Open `index.html` in a browser an
 ## What it does
 
 - **Modular scales from musical-interval ratios** (Minor Second 1.067 through Golden Ratio 1.618, or custom): every step is `base × ratio^n`, after the approach popularized by [precise-type.com](https://precise-type.com/) and Tim Brown's modular scale work.
-- **Three breakpoint scales** — desktop, tablet, and mobile. Tablet and mobile can auto-derive from desktop (ratio damped to 75% / 55% of the interval; base never below 16px) or be set independently. Headings step down on small screens while body text stays put.
+- **Three breakpoint scales** — large, medium, and small, each with an editable preview viewport. Medium and small can auto-derive from the large scale (ratio damped to 75% / 55% of the interval; base never below 16px) or be set independently. Headings step down on small screens while body text stays put.
 - **4px / 8px grid tuning** — every line-height snaps to the grid, sizes round to whole pixels, and a baseline-grid overlay lets you see the vertical rhythm. The grid ships in the exports as `--baseline-grid`.
 - **Line-height and tracking curves** — leading tightens and letter-spacing goes negative as sizes grow, anchored at the base size, using an exponential tracking curve.
 - **Steps and Page views** — inspect the raw scale, or preview it on an example article (headings, lead, body in a 66ch measure, blockquote, list, captions, a UI card) with hover labels showing each block's token.
 - **Craft checks** — a live audit of the current breakpoint against published guidance: body size, line spacing, measure (with real canvas text measurement), vertical rhythm, letterspacing, relative units, WCAG 1.4.12 text-spacing tolerance, glyph legibility, block spacing, and font-loading restraint.
-- **Exports** — stepped CSS custom properties with media queries, fluid `clamp()` CSS interpolating mobile → desktop viewports, and JSON tokens.
+- **Exports** — stepped CSS custom properties with media queries, fluid `clamp()` CSS interpolating small → large viewports, and JSON tokens.
 
 ## Sources
 

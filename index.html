@@ -638,16 +638,20 @@
 <div class="app">
   <header>
     <h1>TypeNerd<span class="tick">.</span></h1>
-    <span class="tagline">Responsive type scales — modular ratios stepped down for tablet &amp; mobile</span>
+    <span class="tagline">Responsive type scales — modular ratios stepped down for smaller screens</span>
   </header>
 
   <aside>
     <div class="group">
       <h2>Scale</h2>
       <div class="bp-tabs" id="bpEditTabs">
-        <button data-bp="desktop" class="active">Desktop <span class="w" id="wDesktop"></span></button>
-        <button data-bp="tablet">Tablet <span class="w" id="wTablet"></span></button>
-        <button data-bp="mobile">Mobile <span class="w" id="wMobile"></span></button>
+        <button data-bp="large" class="active">Large <span class="w" id="wLarge"></span></button>
+        <button data-bp="medium">Medium <span class="w" id="wMedium"></span></button>
+        <button data-bp="small">Small <span class="w" id="wSmall"></span></button>
+      </div>
+      <div class="field">
+        <label>Preview viewport</label>
+        <input type="number" id="bpViewport" min="280" max="1920" step="10">
       </div>
       <div class="field">
         <label>Base size <span class="val" id="baseVal"></span></label>
@@ -674,7 +678,7 @@
       <div class="field" id="autoField" style="display:none">
         <label class="check">
           <input type="checkbox" id="autoDerive" checked>
-          Auto-derive from desktop
+          Auto-derive from the large scale
         </label>
         <p class="hint" id="autoHint"></p>
       </div>
@@ -728,12 +732,12 @@
       <h2>Breakpoints</h2>
       <div class="row2 field">
         <div>
-          <label>Tablet ≤</label>
-          <input type="number" id="tabletMax" min="600" max="1400" step="1" value="1024">
+          <label>Medium ≤</label>
+          <input type="number" id="mediumMax" min="600" max="1400" step="1" value="1024">
         </div>
         <div>
-          <label>Mobile ≤</label>
-          <input type="number" id="mobileMax" min="320" max="800" step="1" value="640">
+          <label>Small ≤</label>
+          <input type="number" id="smallMax" min="320" max="800" step="1" value="640">
         </div>
       </div>
       <div class="field">
@@ -741,7 +745,7 @@
           <input type="checkbox" id="fluidMode">
           Fluid mode — <code style="font-family:var(--mono);font-size:11px">clamp()</code>
         </label>
-        <p class="hint">Interpolates each step linearly from the mobile scale (at 390px) to the desktop scale (at 1280px) instead of stepping at breakpoints.</p>
+        <p class="hint">Interpolates each step linearly from the small scale to the large scale between their preview viewports, instead of stepping at breakpoints.</p>
       </div>
     </div>
 
@@ -837,8 +841,8 @@ const RATIO_NAMES = {
 };
 
 const state = {
-  editBp: "desktop",
-  viewBp: "desktop",
+  editBp: "large",
+  viewBp: "large",
   view: "steps",
   stepsUp: 5,
   stepsDown: 2,
@@ -848,34 +852,34 @@ const state = {
   roundSizes: true,
   showGrid: false,
   lsIntensity: 1,
-  tabletMax: 1024,
-  mobileMax: 640,
+  mediumMax: 1024,
+  smallMax: 640,
   fluid: false,
   font: "Inter",
   weight: 500,
   sample: "The five boxing wizards jump quickly",
   bp: {
-    desktop: { base: 16, ratio: 1.25,  vw: 1280 },
-    tablet:  { base: 16, ratio: 1.188, vw: 768, auto: true },
-    mobile:  { base: 16, ratio: 1.138, vw: 390, auto: true }
+    large:  { base: 16, ratio: 1.25,  vw: 1280 },
+    medium: { base: 16, ratio: 1.188, vw: 768, auto: true },
+    small:  { base: 16, ratio: 1.138, vw: 390, auto: true }
   }
 };
 
 /* ---------- Scale math ---------- */
 
-// Auto-derive tablet/mobile scales: slightly smaller base, damped ratio.
+// Auto-derive medium/small scales: slightly smaller base, damped ratio.
 function deriveScales() {
-  // Derived bases step down from desktop but never below 16px
-  // (or below the desktop base itself, if that is already under 16).
-  const d = state.bp.desktop;
+  // Derived bases step down from the large scale but never below 16px
+  // (or below the large base itself, if that is already under 16).
+  const d = state.bp.large;
   const floor = Math.min(16, d.base);
-  if (state.bp.tablet.auto) {
-    state.bp.tablet.base = Math.max(floor, d.base - 1);
-    state.bp.tablet.ratio = round3(1 + (d.ratio - 1) * 0.75);
+  if (state.bp.medium.auto) {
+    state.bp.medium.base = Math.max(floor, d.base - 1);
+    state.bp.medium.ratio = round3(1 + (d.ratio - 1) * 0.75);
   }
-  if (state.bp.mobile.auto) {
-    state.bp.mobile.base = Math.max(floor, d.base - 2);
-    state.bp.mobile.ratio = round3(1 + (d.ratio - 1) * 0.55);
+  if (state.bp.small.auto) {
+    state.bp.small.base = Math.max(floor, d.base - 2);
+    state.bp.small.ratio = round3(1 + (d.ratio - 1) * 0.55);
   }
 }
 
@@ -940,12 +944,13 @@ function round4(n){ return Math.round(n * 10000) / 10000; }
 
 /* ---------- Fluid clamp() ---------- */
 
-// Linear interpolation of a step between the mobile scale at its viewport
-// and the desktop scale at its viewport.
+// Linear interpolation of a step between the small scale at its viewport
+// and the large scale at its viewport.
 function fluidClamp(i) {
-  const lo = { px: sizePx("mobile", i), vw: state.bp.mobile.vw };
-  const hi = { px: sizePx("desktop", i), vw: state.bp.desktop.vw };
+  const lo = { px: sizePx("small", i), vw: state.bp.small.vw };
+  const hi = { px: sizePx("large", i), vw: state.bp.large.vw };
   const min = Math.min(lo.px, hi.px), max = Math.max(lo.px, hi.px);
+  if (hi.vw === lo.vw) return `${round4(max / 16)}rem`;
   const slope = (hi.px - lo.px) / (hi.vw - lo.vw);
   const intercept = lo.px - slope * lo.vw;
   const minR = round4(min / 16), maxR = round4(max / 16);
@@ -1033,12 +1038,12 @@ function renderControls() {
   $("customRatioField").style.display = presetMatch ? "none" : "block";
   if (!presetMatch) $("customRatio").value = b.ratio;
 
-  const isDerived = state.editBp !== "desktop";
+  const isDerived = state.editBp !== "large";
   $("autoField").style.display = isDerived ? "block" : "none";
   if (isDerived) {
     $("autoDerive").checked = !!b.auto;
     $("autoHint").textContent = b.auto
-      ? `Following desktop: base ${b.base}px (never below 16px), ratio damped to ${b.ratio}.`
+      ? `Following the large scale: base ${b.base}px (never below 16px), ratio damped to ${b.ratio}.`
       : "Set independently.";
   }
   $("baseSize").disabled = isDerived && b.auto;
@@ -1055,9 +1060,10 @@ function renderControls() {
   $("lsVal").textContent = state.lsIntensity === 0 ? "off" : `×${state.lsIntensity.toFixed(2)}`;
   renderWeightControl();
 
-  $("wDesktop").textContent = `${state.bp.desktop.vw}`;
-  $("wTablet").textContent = `${state.bp.tablet.vw}`;
-  $("wMobile").textContent = `${state.bp.mobile.vw}`;
+  $("bpViewport").value = b.vw;
+  $("wLarge").textContent = `${state.bp.large.vw}`;
+  $("wMedium").textContent = `${state.bp.medium.vw}`;
+  $("wSmall").textContent = `${state.bp.small.vw}`;
 }
 
 function renderSpecimen() {
@@ -1070,7 +1076,7 @@ function renderSpecimen() {
 
   const ratioName = RATIO_NAMES[String(b.ratio)] || (b.auto ? "derived" : "custom");
   $("specimenLabel").textContent = state.fluid
-    ? `fluid · ${state.bp.mobile.vw}px → ${state.bp.desktop.vw}px · previewing ${bp} @ ${b.vw}px`
+    ? `fluid · ${state.bp.small.vw}px → ${state.bp.large.vw}px · previewing ${bp} @ ${b.vw}px`
     : `${bp} @ ${b.vw}px · base ${b.base}px · ratio ${b.ratio} (${ratioName})`;
   $("specimenFont").textContent = `${state.font.replace(/^__system-/, "system ")} ${state.weight}`;
 
@@ -1084,21 +1090,21 @@ function renderSpecimen() {
   list.innerHTML = "";
   for (const i of stepIndices()) {
     const s = computeStep(bp, i);
-    const d = computeStep("desktop", i), t = computeStep("tablet", i), m = computeStep("mobile", i);
+    const stepL = computeStep("large", i), stepM = computeStep("medium", i), stepS = computeStep("small", i);
 
     const row = document.createElement("div");
     row.className = "step-row" + (i === 0 ? " is-base" : "");
 
     const meta = document.createElement("div");
     meta.className = "step-meta";
-    const tri = [ ["mobile", m], ["tablet", t], ["desktop", d] ]
+    const tri = [ ["small", stepS], ["medium", stepM], ["large", stepL] ]
       .map(([k, v]) => k === bp ? `<em>${v.px}</em>` : v.px).join(" / ");
     meta.innerHTML =
       `<span class="name">${s.name}</span>` +
       `<span>${s.px}px · ${s.rem}rem</span>` +
       `<span>lh ${s.lhPx} (${s.lh})</span>` +
       `<span>ls ${s.ls}em</span>` +
-      `<span class="tri">m/t/d: ${tri}</span>`;
+      `<span class="tri">s/m/l: ${tri}</span>`;
 
     const sample = document.createElement("div");
     sample.className = "step-sample";
@@ -1374,25 +1380,25 @@ function cssVars(bp, indent) {
 }
 
 function buildSteppedCSS() {
-  const d = state.bp.desktop, t = state.bp.tablet, m = state.bp.mobile;
+  const l = state.bp.large, md = state.bp.medium, sm = state.bp.small;
   return `/* TypeNerd type scale — stepped
-   desktop: base ${d.base}px × ${d.ratio}
-   tablet (≤${state.tabletMax}px): base ${t.base}px × ${t.ratio}
-   mobile (≤${state.mobileMax}px): base ${m.base}px × ${m.ratio} */
+   large: base ${l.base}px × ${l.ratio}
+   medium (≤${state.mediumMax}px): base ${md.base}px × ${md.ratio}
+   small (≤${state.smallMax}px): base ${sm.base}px × ${sm.ratio} */
 
 :root {
-${state.grid > 0 ? `  /* vertical rhythm unit — line-heights are tuned to multiples of this */\n  --baseline-grid: ${state.grid}px;\n` : ""}${cssVars("desktop", "  ")}
+${state.grid > 0 ? `  /* vertical rhythm unit — line-heights are tuned to multiples of this */\n  --baseline-grid: ${state.grid}px;\n` : ""}${cssVars("large", "  ")}
 }
 
-@media (max-width: ${state.tabletMax}px) {
+@media (max-width: ${state.mediumMax}px) {
   :root {
-${cssVars("tablet", "    ")}
+${cssVars("medium", "    ")}
   }
 }
 
-@media (max-width: ${state.mobileMax}px) {
+@media (max-width: ${state.smallMax}px) {
   :root {
-${cssVars("mobile", "    ")}
+${cssVars("small", "    ")}
   }
 }
 
@@ -1406,18 +1412,18 @@ ${cssVars("mobile", "    ")}
 }
 
 function buildFluidCSS() {
-  const d = state.bp.desktop, m = state.bp.mobile;
+  const l = state.bp.large, sm = state.bp.small;
   const vars = stepIndices().map(i => {
-    const s = computeStep("desktop", i);
+    const s = computeStep("large", i);
     return `  --text-${s.name}: ${fluidClamp(i)};\n` +
            `  --leading-${s.name}: ${s.lh};\n` +
            `  --tracking-${s.name}: ${s.ls}em;`;
   }).join("\n");
   return `/* TypeNerd type scale — fluid
-   Each step interpolates from the mobile scale (base ${m.base}px × ${m.ratio}
-   at ${m.vw}px viewport) to the desktop scale (base ${d.base}px × ${d.ratio}
-   at ${d.vw}px viewport), clamped at both ends.
-   Leading/tracking use desktop-scale values. */
+   Each step interpolates from the small scale (base ${sm.base}px × ${sm.ratio}
+   at ${sm.vw}px viewport) to the large scale (base ${l.base}px × ${l.ratio}
+   at ${l.vw}px viewport), clamped at both ends.
+   Leading/tracking use large-scale values. */
 
 :root {
 ${state.grid > 0 ? `  --baseline-grid: ${state.grid}px;\n` : ""}${vars}
@@ -1432,7 +1438,7 @@ function buildJSON() {
     baselineGrid: state.grid > 0 ? `${state.grid}px` : null,
     breakpoints: {}
   };
-  for (const bp of ["desktop", "tablet", "mobile"]) {
+  for (const bp of ["large", "medium", "small"]) {
     const b = state.bp[bp];
     out.breakpoints[bp] = {
       viewport: b.vw, base: b.base, ratio: b.ratio,
@@ -1528,8 +1534,12 @@ $("gridSeg").addEventListener("click", (e) => {
 $("roundSizes").addEventListener("change", (e) => { state.roundSizes = e.target.checked; update(); });
 $("toggleGrid").addEventListener("click", () => { state.showGrid = !state.showGrid; update(); });
 $("lsIntensity").addEventListener("input", (e) => { state.lsIntensity = +e.target.value; update(); });
-$("tabletMax").addEventListener("input", (e) => { state.tabletMax = +e.target.value || 1024; update(); });
-$("mobileMax").addEventListener("input", (e) => { state.mobileMax = +e.target.value || 640; update(); });
+$("mediumMax").addEventListener("input", (e) => { state.mediumMax = +e.target.value || 1024; update(); });
+$("smallMax").addEventListener("input", (e) => { state.smallMax = +e.target.value || 640; update(); });
+$("bpViewport").addEventListener("input", (e) => {
+  const v = +e.target.value;
+  if (v >= 280 && v <= 1920) { state.bp[state.editBp].vw = v; update(); }
+});
 $("fluidMode").addEventListener("change", (e) => {
   state.fluid = e.target.checked;
   exportTab = state.fluid ? "fluid" : "css";
