@@ -752,7 +752,7 @@
     <div class="group">
       <h2>Font</h2>
       <div class="field">
-        <label>Preview family <span class="val" id="fontCount"></span></label>
+        <label><span id="fontLabel1">Preview family</span> <span class="val" id="fontCount"></span></label>
         <input type="text" id="fontInput" list="fontList" value="Inter"
                placeholder="Search Google Fonts…" autocomplete="off" spellcheck="false">
         <datalist id="fontList"></datalist>
@@ -762,6 +762,26 @@
         <label>Weight <span class="val" id="weightVal"></span></label>
         <input type="range" id="fontWeight" min="0" max="4" step="1" value="2">
         <div class="ticks" id="weightTicks"></div>
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" id="pairToggle">
+          Pair a second family
+        </label>
+        <p class="hint">Sets headings in the family above and body text — the base step and below — in a second family.</p>
+      </div>
+      <div id="pairFields" style="display:none">
+        <div class="field">
+          <label>Body family</label>
+          <input type="text" id="fontInput2" list="fontList" value="Lora"
+                 placeholder="Search Google Fonts…" autocomplete="off" spellcheck="false">
+          <p class="hint" id="fontStatus2"></p>
+        </div>
+        <div class="field">
+          <label>Body weight <span class="val" id="weightVal2"></span></label>
+          <input type="range" id="fontWeight2" min="0" max="4" step="1" value="1">
+          <div class="ticks" id="weightTicks2"></div>
+        </div>
       </div>
     </div>
   </aside>
@@ -857,6 +877,9 @@ const state = {
   fluid: false,
   font: "Inter",
   weight: 500,
+  pair: false,
+  font2: "Lora",
+  weight2: 400,
   sample: "The five boxing wizards jump quickly",
   bp: {
     large:  { base: 16, ratio: 1.25,  vw: 1280 },
@@ -980,12 +1003,18 @@ const CAT_FALLBACK = { s: "serif", a: "sans-serif", d: "serif", h: "cursive", m:
 
 function fontInfo(name) { return FONT_INDEX.get(name.toLowerCase()); }
 
-function fontStack() {
-  if (state.font === "__system-serif") return "Georgia, 'Times New Roman', serif";
-  if (state.font === "__system-sans") return "-apple-system, 'Helvetica Neue', sans-serif";
-  const info = fontInfo(state.font);
-  return `'${state.font}', ${info ? CAT_FALLBACK[info.cat] : "serif"}`;
+function fontStackFor(name) {
+  if (name === "__system-serif") return "Georgia, 'Times New Roman', serif";
+  if (name === "__system-sans") return "-apple-system, 'Helvetica Neue', sans-serif";
+  const info = fontInfo(name);
+  return `'${name}', ${info ? CAT_FALLBACK[info.cat] : "serif"}`;
 }
+function fontStack() { return fontStackFor(state.font); }
+
+// Body text uses the paired family when pairing is on, else the main one.
+function bodyFontName() { return state.pair ? state.font2 : state.font; }
+function bodyWeight() { return state.pair ? state.weight2 : state.weight; }
+function bodyStack() { return fontStackFor(bodyFontName()); }
 
 const loadedFonts = new Set();
 function ensureFont(name) {
@@ -1004,9 +1033,9 @@ function ensureFont(name) {
   document.head.appendChild(link);
 }
 
-// The status line only surfaces problems; it stays hidden otherwise.
-function fontStatusText() {
-  if (state.font.startsWith("__") || fontInfo(state.font)) return "";
+// The status lines only surface problems; they stay hidden otherwise.
+function fontStatusTextFor(name) {
+  if (name.startsWith("__") || fontInfo(name)) return "";
   return "Not in the library index — trying to load it anyway.";
 }
 
@@ -1078,7 +1107,8 @@ function renderSpecimen() {
   $("specimenLabel").textContent = state.fluid
     ? `fluid · ${state.bp.small.vw}px → ${state.bp.large.vw}px · previewing ${bp} @ ${b.vw}px`
     : `${bp} @ ${b.vw}px · base ${b.base}px · ratio ${b.ratio} (${ratioName})`;
-  $("specimenFont").textContent = `${state.font.replace(/^__system-/, "system ")} ${state.weight}`;
+  $("specimenFont").textContent = `${displayNameFor(state.font)} ${state.weight}`
+    + (state.pair ? ` + ${displayNameFor(state.font2)} ${state.weight2}` : "");
 
   const isPage = state.view === "page";
   $("stepList").style.display = isPage ? "none" : "";
@@ -1109,8 +1139,9 @@ function renderSpecimen() {
     const sample = document.createElement("div");
     sample.className = "step-sample";
     sample.textContent = state.sample || "Sample";
-    sample.style.fontFamily = fontStack();
-    sample.style.fontWeight = state.weight;
+    const isHeading = i > 0;
+    sample.style.fontFamily = isHeading ? fontStack() : bodyStack();
+    sample.style.fontWeight = isHeading ? state.weight : bodyWeight();
     sample.style.fontSize = s.px + "px";
     sample.style.lineHeight = s.lhPx + "px";
     sample.style.letterSpacing = s.ls + "em";
@@ -1153,12 +1184,12 @@ function renderPage() {
     lead: stepName(cl(1)), body: "base", caption: stepName(cl(-1)), small: stepName(cl(-2))
   };
 
-  const bodyW = state.weight;
-  const headW = state.weight;
   // font/line/tracking from the scale; caps styles get +8% tracking (Butterick: 5–12%)
-  const st = (r, w, capsLs) =>
-    `font-family:${fontStack()};font-weight:${w};font-size:${r.px}px;` +
+  const mk = (f, w) => (r, capsLs) =>
+    `font-family:${f};font-weight:${w};font-size:${r.px}px;` +
     `line-height:${r.lhPx}px;letter-spacing:${capsLs != null ? capsLs : r.ls}em;`;
+  const stH = mk(fontStack(), state.weight);   // headings, kicker, button
+  const stB = mk(bodyStack(), bodyWeight());   // running text and small steps
   // USWDS: ~1.5× more space above a heading than below it
   const hm = (r) => { const mb = snap(r.px * 0.35); return `margin:${snap(mb * 1.5)}px 0 ${mb}px;`; };
   const pm = `margin:0 0 ${snap(roles.body.px)}px;`;  // ≥1em between paragraphs
@@ -1167,22 +1198,22 @@ function renderPage() {
   $("pageView").innerHTML = `
   <div class="page">
     <div class="measure">
-      <p class="pv kicker" ${lbl("kicker", "caption")} style="${st(roles.caption, headW, 0.08)}margin:0 0 ${snap(roles.caption.px * 0.75)}px;">Field notes · Typography</p>
-      <h1 class="pv" ${lbl("h1", "h1")} style="${st(roles.h1, headW)}margin:0 0 ${snap(roles.h1.px * 0.35)}px;">Terraces hold the hillside in place</h1>
-      <p class="pv byline" ${lbl("byline", "caption")} style="${st(roles.caption, bodyW)}margin:0 0 ${snap(roles.body.px * 1.5)}px;">By A. Reader · August 2026 · 6 min read</p>
+      <p class="pv kicker" ${lbl("kicker", "caption")} style="${stH(roles.caption, 0.08)}margin:0 0 ${snap(roles.caption.px * 0.75)}px;">Field notes · Typography</p>
+      <h1 class="pv" ${lbl("h1", "h1")} style="${stH(roles.h1)}margin:0 0 ${snap(roles.h1.px * 0.35)}px;">Terraces hold the hillside in place</h1>
+      <p class="pv byline" ${lbl("byline", "caption")} style="${stB(roles.caption)}margin:0 0 ${snap(roles.body.px * 1.5)}px;">By A. Reader · August 2026 · 6 min read</p>
 
-      <p class="pv lead" ${lbl("lead paragraph", "lead")} style="${st(roles.lead, bodyW)}${pm}">Long before anyone wrote about modular scales, farmers were stepping hillsides into level terraces — each one proportioned to the slope, each one holding water where it was needed.</p>
+      <p class="pv lead" ${lbl("lead paragraph", "lead")} style="${stB(roles.lead)}${pm}">Long before anyone wrote about modular scales, farmers were stepping hillsides into level terraces — each one proportioned to the slope, each one holding water where it was needed.</p>
 
-      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">A type scale works the same way. Instead of choosing sizes one at a time, you choose a base and a ratio, and every level follows from the decision. The eye reads the page the way water moves down the hill: step by step, nothing abrupt, nothing arbitrary. This paragraph is set at the base size, on the line grid, in a measure of about sixty-six characters.</p>
+      <p class="pv" ${lbl("body", "body")} style="${stB(roles.body)}${pm}">A type scale works the same way. Instead of choosing sizes one at a time, you choose a base and a ratio, and every level follows from the decision. The eye reads the page the way water moves down the hill: step by step, nothing abrupt, nothing arbitrary. This paragraph is set at the base size, on the line grid, in a measure of about sixty-six characters.</p>
 
-      <h2 class="pv" ${lbl("h2", "h2")} style="${st(roles.h2, headW)}${hm(roles.h2)}">Stepping down the slope</h2>
-      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">On a phone the hillside is steeper, so the terraces get shallower: the same base size, a gentler ratio. Headlines that command a desktop page would swamp a small screen, and the damped scale keeps every level usable.</p>
+      <h2 class="pv" ${lbl("h2", "h2")} style="${stH(roles.h2)}${hm(roles.h2)}">Stepping down the slope</h2>
+      <p class="pv" ${lbl("body", "body")} style="${stB(roles.body)}${pm}">On a phone the hillside is steeper, so the terraces get shallower: the same base size, a gentler ratio. Headlines that command a desktop page would swamp a small screen, and the damped scale keeps every level usable.</p>
 
-      <blockquote class="pv" ${lbl("blockquote", "lead")} style="${st(roles.lead, bodyW)}margin:${snap(roles.body.px * 1.5)}px 0;">“Typography exists to honor content — the scale is just the terrace wall that keeps it from washing away.”</blockquote>
+      <blockquote class="pv" ${lbl("blockquote", "lead")} style="${stB(roles.lead)}margin:${snap(roles.body.px * 1.5)}px 0;">“Typography exists to honor content — the scale is just the terrace wall that keeps it from washing away.”</blockquote>
 
-      <h3 class="pv" ${lbl("h3", "h3")} style="${st(roles.h3, headW)}${hm(roles.h3)}">Water finds the level</h3>
-      <p class="pv" ${lbl("body", "body")} style="${st(roles.body, bodyW)}${pm}">Everything on this page comes from the exported tokens — no ad-hoc sizes anywhere:</p>
-      <ul class="pv" ${lbl("list", "body")} style="${st(roles.body, bodyW)}${pm}">
+      <h3 class="pv" ${lbl("h3", "h3")} style="${stH(roles.h3)}${hm(roles.h3)}">Water finds the level</h3>
+      <p class="pv" ${lbl("body", "body")} style="${stB(roles.body)}${pm}">Everything on this page comes from the exported tokens — no ad-hoc sizes anywhere:</p>
+      <ul class="pv" ${lbl("list", "body")} style="${stB(roles.body)}${pm}">
         <li style="margin-bottom:${snap(roles.body.px * 0.5)}px;">Headings use the upper steps, with ~1.5× more space above than below.</li>
         <li style="margin-bottom:${snap(roles.body.px * 0.5)}px;">Body, lead, and list text share the base step and its grid-tuned leading.</li>
         <li>Captions, bylines, and fine print walk down the small steps.</li>
@@ -1190,17 +1221,17 @@ function renderPage() {
 
       <figure class="pv" ${lbl("figure + caption", "caption")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
         <div class="figure-box">fig. 1 — placeholder</div>
-        <figcaption style="${st(roles.caption, bodyW)}margin-top:${snap(roles.caption.px * 0.5)}px;">Rice terraces quantize a continuous slope — a line grid does the same to leading.</figcaption>
+        <figcaption style="${stB(roles.caption)}margin-top:${snap(roles.caption.px * 0.5)}px;">Rice terraces quantize a continuous slope — a line grid does the same to leading.</figcaption>
       </figure>
 
       <div class="pv card" ${lbl("UI card", "body")} style="margin:${snap(roles.body.px * 1.5)}px 0;">
-        <h4 style="${st(roles.h3, headW)}margin:0 0 ${snap(roles.h3.px * 0.35)}px;">Take the scale with you</h4>
-        <p style="${st(roles.caption, bodyW)}margin:0 0 ${snap(roles.body.px)}px;">Export CSS custom properties, fluid clamp() values, or JSON tokens.</p>
-        <span class="btn" style="${st(roles.caption, headW, 0.06)}line-height:1;">Export tokens</span>
+        <h4 style="${stH(roles.h3)}margin:0 0 ${snap(roles.h3.px * 0.35)}px;">Take the scale with you</h4>
+        <p style="${stB(roles.caption)}margin:0 0 ${snap(roles.body.px)}px;">Export CSS custom properties, fluid clamp() values, or JSON tokens.</p>
+        <span class="btn" style="${stH(roles.caption, 0.06)}line-height:1;">Export tokens</span>
       </div>
 
       <hr style="margin:${snap(roles.body.px * 1.5)}px 0;">
-      <p class="pv smallprint" ${lbl("fine print", "small")} style="${st(roles.small, bodyW)}margin:0;">Set in ${state.font.replace(/^__system-/, "system ")} · base ${state.bp[bp].base}px · ratio ${state.bp[bp].ratio} · ${state.grid > 0 ? state.grid + "px grid" : "grid off"} — hover any block to see its token.</p>
+      <p class="pv smallprint" ${lbl("fine print", "small")} style="${stB(roles.small)}margin:0;">Set in ${displayNameFor(state.font)}${state.pair ? " & " + displayNameFor(state.font2) : ""} · base ${state.bp[bp].base}px · ratio ${state.bp[bp].ratio} · ${state.grid > 0 ? state.grid + "px grid" : "grid off"} — hover any block to see its token.</p>
     </div>
   </div>`;
 }
@@ -1217,7 +1248,7 @@ function measureCPL(bp) {
   const b = state.bp[bp];
   const canvas = measureCPL.c || (measureCPL.c = document.createElement("canvas"));
   const ctx = canvas.getContext("2d");
-  ctx.font = `${state.weight} ${sizePx(bp, 0)}px ${fontStack()}`;
+  ctx.font = `${bodyWeight()} ${sizePx(bp, 0)}px ${bodyStack()}`;
   const avg = ctx.measureText("abcdefghijklmnopqrstuvwxyz").width / 26;
   const contentW = b.vw - 44; // specimen padding
   return avg > 0 ? Math.round(contentW / avg) : 0;
@@ -1326,6 +1357,7 @@ function renderCraft() {
     title: "Font legibility",
     detail: `Check that the preview family keeps these glyphs distinguishable: `
       + `<span style="font-family:${fontStack()};font-weight:${state.weight};font-size:1.4em;">Il1 · 0O · rn m · e o</span>`
+      + (state.pair ? ` / <span style="font-family:${bodyStack()};font-weight:${bodyWeight()};font-size:1.4em;">Il1 · 0O · rn m · e o</span>` : "")
       + ` — and avoid long passages set in all caps, bold, or italic.`,
     src: "WebAIM · readability"
   });
@@ -1481,7 +1513,8 @@ function update() {
 // Re-measure CPL and refresh load status once web fonts finish loading
 if (document.fonts && document.fonts.addEventListener) {
   document.fonts.addEventListener("loadingdone", () => {
-    $("fontStatus").textContent = fontStatusText();
+    $("fontStatus").textContent = fontStatusTextFor(state.font);
+    if (state.pair) $("fontStatus2").textContent = fontStatusTextFor(state.font2);
     update();
   });
 }
@@ -1563,85 +1596,109 @@ function resolveFont(raw) {
   return prefix || substr;
 }
 
-// Weights the current preview family actually offers (within the loaded
-// 300–700 range); system fonts get the full set, unknown families 400/700.
-function availableWeights() {
-  if (state.font.startsWith("__")) return [300, 400, 500, 600, 700];
-  const info = fontInfo(state.font);
+// Weights a family actually offers (within the loaded 300–700 range);
+// system fonts get the full set, unknown families 400/700.
+function availableWeightsFor(name) {
+  if (name.startsWith("__")) return [300, 400, 500, 600, 700];
+  const info = fontInfo(name);
   if (!info) return [400, 700];
   const ws = info.weights.filter(w => w >= 300 && w <= 700);
   return ws.length ? ws : [400];
 }
 
-function renderWeightControl() {
-  const ws = availableWeights();
-  if (!ws.includes(state.weight)) {
-    state.weight = ws.reduce((a, b) =>
-      Math.abs(b - state.weight) < Math.abs(a - state.weight) ? b : a);
+function renderWeightControlFor(name, weightKey, ids) {
+  const ws = availableWeightsFor(name);
+  if (!ws.includes(state[weightKey])) {
+    state[weightKey] = ws.reduce((a, b) =>
+      Math.abs(b - state[weightKey]) < Math.abs(a - state[weightKey]) ? b : a);
   }
-  const sl = $("fontWeight");
+  const sl = $(ids.slider);
   sl.max = ws.length - 1;
-  sl.value = ws.indexOf(state.weight);
+  sl.value = ws.indexOf(state[weightKey]);
   sl.disabled = ws.length === 1;
-  $("weightVal").textContent = state.weight;
-  $("weightTicks").innerHTML = ws.map((w, i) => {
+  $(ids.val).textContent = state[weightKey];
+  $(ids.ticks).innerHTML = ws.map((w, i) => {
     const x = ws.length === 1 ? 50 : (i / (ws.length - 1)) * 100;
-    return `<button data-w="${w}" class="${w === state.weight ? "active" : ""}" style="left:${x}%">${w}</button>`;
+    return `<button data-w="${w}" class="${w === state[weightKey] ? "active" : ""}" style="left:${x}%">${w}</button>`;
   }).join("");
 }
 
-function fontDisplayName() {
-  return state.font === "__system-serif" ? "System serif"
-       : state.font === "__system-sans" ? "System sans"
-       : state.font;
-}
-
-function applyFont(name, inputEl) {
-  state.font = name;
-  if (inputEl) inputEl.value = fontDisplayName();
-  ensureFont(state.font);
-  $("fontStatus").textContent = fontStatusText();
-  update();
-}
-
-// Fires while typing AND when a datalist suggestion is clicked: apply
-// immediately on an exact match so picking from the list just works.
-$("fontInput").addEventListener("input", (e) => {
-  const raw = e.target.value.trim().toLowerCase();
-  const hit = raw === "system serif" ? "__system-serif"
-            : raw === "system sans" ? "__system-sans"
-            : FONT_INDEX.get(raw)?.name;
-  if (hit && hit !== state.font) applyFont(hit, e.target);
-});
-
-// Enter or blur: accept partial names too (prefix/substring match).
-// An empty field (e.g. focused, then clicked away) restores the current font.
-$("fontInput").addEventListener("change", (e) => {
-  const raw = e.target.value.trim();
-  if (!raw) { e.target.value = fontDisplayName(); return; }
-  const hit = resolveFont(raw);
-  if (hit) {
-    if (hit !== state.font) applyFont(hit, e.target);
-    else e.target.value = fontDisplayName();
-  } else {
-    $("fontStatus").textContent = `No family matching “${raw}” — try another name.`;
+function renderWeightControl() {
+  renderWeightControlFor(state.font, "weight", { slider: "fontWeight", ticks: "weightTicks", val: "weightVal" });
+  $("fontLabel1").textContent = state.pair ? "Heading family" : "Preview family";
+  $("pairFields").style.display = state.pair ? "block" : "none";
+  if (state.pair) {
+    renderWeightControlFor(state.font2, "weight2", { slider: "fontWeight2", ticks: "weightTicks2", val: "weightVal2" });
   }
-});
+}
 
-// Clear on focus so the full suggestion list opens and typing starts fresh;
-// blur without a choice restores the name via the change handler above.
-$("fontInput").addEventListener("focus", (e) => { e.target.value = ""; });
-$("fontInput").addEventListener("blur", (e) => {
-  if (!e.target.value.trim()) e.target.value = fontDisplayName();
+function displayNameFor(name) {
+  return name === "__system-serif" ? "System serif"
+       : name === "__system-sans" ? "System sans"
+       : name;
+}
+
+// Wire a family field: apply instantly on an exact match (the datalist-click
+// path), resolve partial names on Enter/blur, clear on focus so the full
+// suggestion list opens, and restore the name if left empty.
+function setupFontField(inputId, statusId, fontKey) {
+  const el = $(inputId);
+  const apply = (name) => {
+    state[fontKey] = name;
+    el.value = displayNameFor(name);
+    ensureFont(name);
+    $(statusId).textContent = fontStatusTextFor(name);
+    update();
+  };
+  el.addEventListener("input", (e) => {
+    const raw = e.target.value.trim().toLowerCase();
+    const hit = raw === "system serif" ? "__system-serif"
+              : raw === "system sans" ? "__system-sans"
+              : FONT_INDEX.get(raw)?.name;
+    if (hit && hit !== state[fontKey]) apply(hit);
+  });
+  el.addEventListener("change", (e) => {
+    const raw = e.target.value.trim();
+    if (!raw) { e.target.value = displayNameFor(state[fontKey]); return; }
+    const hit = resolveFont(raw);
+    if (hit) {
+      if (hit !== state[fontKey]) apply(hit);
+      else e.target.value = displayNameFor(hit);
+    } else {
+      $(statusId).textContent = `No family matching “${raw}” — try another name.`;
+    }
+  });
+  el.addEventListener("focus", (e) => { e.target.value = ""; });
+  el.addEventListener("blur", (e) => {
+    if (!e.target.value.trim()) e.target.value = displayNameFor(state[fontKey]);
+  });
+}
+setupFontField("fontInput", "fontStatus", "font");
+setupFontField("fontInput2", "fontStatus2", "font2");
+
+$("pairToggle").addEventListener("change", (e) => {
+  state.pair = e.target.checked;
+  if (state.pair) ensureFont(state.font2);
+  update();
 });
 $("fontWeight").addEventListener("input", (e) => {
-  const ws = availableWeights();
+  const ws = availableWeightsFor(state.font);
   state.weight = ws[+e.target.value] ?? ws[0];
   update();
 });
 $("weightTicks").addEventListener("click", (e) => {
   const btn = e.target.closest("button"); if (!btn) return;
   state.weight = +btn.dataset.w;
+  update();
+});
+$("fontWeight2").addEventListener("input", (e) => {
+  const ws = availableWeightsFor(state.font2);
+  state.weight2 = ws[+e.target.value] ?? ws[0];
+  update();
+});
+$("weightTicks2").addEventListener("click", (e) => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  state.weight2 = +btn.dataset.w;
   update();
 });
 $("sampleText").addEventListener("input", (e) => { state.sample = e.target.value; renderSpecimen(); });
@@ -1675,7 +1732,6 @@ $("copyBtn").addEventListener("click", async () => {
 
 populateFontList();
 ensureFont(state.font);
-$("fontStatus").textContent = fontStatusText();
 update();
 </script>
 </body>
